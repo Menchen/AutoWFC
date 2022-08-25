@@ -6,7 +6,7 @@ using UnityEngine.Tilemaps;
 
 namespace Script
 {
-    public struct TileData<T> where T:TileBase
+    public class TileData<T> where T:TileBase
     {
         public Vector2Int Position;
         public Sprite Sprite

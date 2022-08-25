@@ -18,9 +18,10 @@ namespace Script
             return x + y * width;
         }
         
-        public static T[] GetNeighbors<T>(T[]array ,int x,int y,int maxX, int maxY, int width)
+        public static T[] GetNeighbors<T>(T[]array ,int x,int y,int maxX, int maxY)
         {
             var result = new T[4];
+            var width = maxX;
             if (y+1<maxY)
             {
                 result[Up] = (array[MapIndex(x,y+1,width)]);

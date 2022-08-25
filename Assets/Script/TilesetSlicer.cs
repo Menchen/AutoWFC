@@ -47,7 +47,7 @@ namespace Script
             AssetDatabase.CreateFolder("Assets", tileSetPath);
 
             int x = 0;
-            int y = tileSet.height / pixelPerUnit;
+            int y = MaxY-1;
             foreach (var sprite in sprites)
             {
 
@@ -63,7 +63,7 @@ namespace Script
                 changeDataList.Add(data);
 
                 x++;
-                if (x >= tileSet.width / pixelPerUnit)
+                if (x >= MaxX)
                 {
                     x = 0;
                     y--;
@@ -95,6 +95,42 @@ namespace Script
                 tilemap.SetTile(position, data.Tile);
                 palletTilemap.SetTile(position, data.Tile);
             }
+
+
+            WFC wfc;
+            for (int i = 0; i < 5000; i++)
+            {
+                
+                try
+                {
+                    wfc = new WFC(relations,new Vector2Int(MaxX,MaxY), hashArray);
+                    while (wfc.CollapseNextState())
+                    {
+                        
+                    }
+                    
+                    wfc.WriteToFile(out var wfcMap);
+
+                    for (int xx = 0; xx < wfcMap.GetLength(0); xx++)
+                    {
+                        for (int yy = 0; yy < wfcMap.GetLength(1); yy++)
+                        {
+                            if (wfcMap[xx,yy] is not null && tileLookUp.TryGetValue(wfcMap[xx,yy], out var tile))
+                            {
+                                tilemap.SetEditorPreviewTile(new Vector3Int(xx,yy),tile);
+                            }
+                        }
+                    }
+                    break;
+
+                }
+                catch (InvalidOperationException e)
+                {
+                    Console.WriteLine(e);
+                }
+
+            }
+            
         }
 
         private int MaxY => tileSet.height / pixelPerUnit;

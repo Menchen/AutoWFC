@@ -39,7 +39,7 @@ namespace Script
                         relationship = new TileRelationship(){ Hash = hash};
                     }
 
-                    var neighbors = TileUtils.GetNeighbors(hashArray, x, y,maxX,maxY,pixelPerUnit);
+                    var neighbors = TileUtils.GetNeighbors(hashArray, x, y,maxX,maxY);
 
                     for (int i = 0; i < neighbors.Length; i++)
                     {
