@@ -8,7 +8,7 @@ namespace Script.GenericUtils
     {
         public int Length => _offset.Length;
 
-        public IEnumerable<int[]> Neighbours => _offset;
+        public IList<int[]> Neighbours => _offset;
         
         private const int Rank = 2;
         private readonly int[][] _offset =  {

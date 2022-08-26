@@ -16,7 +16,7 @@ namespace WFC
                 Valid = Enumerable.Range(0, neighbourLength).Select(_ => new BitArray(bitsetSize)).ToArray();
             }
 
-            public string Id { get; private set; }
+            public int Id { get; set; }
             public float Frequency { get; set; }
             public T Value { get; set; }
             public T[] Data { get; set; }

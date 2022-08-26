@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 public static class ArrayUtils
@@ -13,7 +14,7 @@ public static class ArrayUtils
         return pos.All(e=>e>=0) && size.Zip(pos, (a, b) => a - b).All(e => e > 0);
     }
     
-    public static TypedArray<int>? UnRavelIndex(int[] size, int index)
+    public static int[] UnRavelIndex(int[] size, int index)
     {
         var prefix = new int[size.Length + 1];
         prefix[0] = 1;

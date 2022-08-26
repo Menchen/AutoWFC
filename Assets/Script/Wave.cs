@@ -66,7 +66,7 @@ namespace WFC
                         neighbors[i] = null;
 
                         // ReSharper disable once CoVariantArrayConversion
-                        if (Wfc.Neighbours.TryGet(wave, e.Pos, Wfc.Neighbours.Neighbours.ElementAt(i),
+                        if (Wfc.Neighbours.TryGet(wave, e.Pos, Wfc.Neighbours.Neighbours[i],
                                 out var output))
                         {
                             var neighbourElement = output as Element;
