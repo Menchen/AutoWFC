@@ -176,6 +176,7 @@ namespace WFC
                         if (Preset[i] is not null)
                         {
                             wave[i].Value = Preset[i];
+                            NumCollapsed++;
                         }
                     }
                 }

@@ -141,7 +141,7 @@ namespace WFC
 
                             if (!ArrayUtils.InBounds(PatternSizeVec,offsetP))
                             {
-                                break;
+                                continue;
                             }
                             
                             var vecP = p.Data[ArrayUtils.RavelIndex(PatternSizeVec, offsetP)!.Value];
@@ -288,6 +288,36 @@ namespace WFC
                     }
                 }
 
+                // throw new InvalidOperationException($"Failed to select pattern for {string.Join(",", e.Pos.Value)}");
+                Debug.Log($"Failed to select pattern for {string.Join(",", e.Pos.Value)}");
+                return -1;
+            }
+            
+            
+            
+            public static int PatternUniform(Wave w, Element e)
+            {
+
+                var random = w.Wfc.Random;
+                var avaliable = e.Coefficient.GetCardinality();
+                var r = random.Next(0, avaliable);
+                
+
+                var accumulator = 0;
+                for (int i = 0; i < e.Coefficient.Count; i++)
+                {
+                    if (!e.Coefficient[i])
+                    {
+                        continue;
+                    }
+
+                    if (accumulator >= r)
+                    {
+                        return i;
+                    }
+
+                    accumulator++;
+                }
                 // throw new InvalidOperationException($"Failed to select pattern for {string.Join(",", e.Pos.Value)}");
                 Debug.Log($"Failed to select pattern for {string.Join(",", e.Pos.Value)}");
                 return -1;

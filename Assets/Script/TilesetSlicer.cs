@@ -61,9 +61,9 @@ namespace Script
                 }
             }
             var preset = new string[sprites.Length];
-            preset[sprites.Length / 2] = t;
+            // preset[sprites.Length / 2] = t;
             
-            var wfc = new WfcUtils<string>(2,3,sprites.Length,sizeInput,hashedSpriteInput,WfcUtils<string>.SelectPattern.PatternWeighted,WfcUtils<string>.NextCell.MinEntropy,e=>{},BorderBehavior.EXCLUDE,new System.Random(),0,new Neibours2<object>(),null);
+            var wfc = new WfcUtils<string>(2,9,sprites.Length,sizeInput,hashedSpriteInput,WfcUtils<string>.SelectPattern.PatternWeighted,WfcUtils<string>.NextCell.MinEntropy,e=>{},BorderBehavior.EXCLUDE,new System.Random(),0,new Neibours2<object>(),null);
             var colaped = wfc.Collapse(sizeInput,out var output,preset);
 
             var tilemap = GetComponent<Tilemap>();
@@ -76,9 +76,16 @@ namespace Script
                 var tile = ScriptableObject.CreateInstance<Tile>();
                 
                 tile.sprite = output[i] is null ? null : lookup[output[i]];
-                tilemap.SetEditorPreviewTile(new Vector3Int(pos[0], pos[1]), tile);
-                tilemap.SetTile(new Vector3Int(pos[0], pos[1]), tile);
+                var unityIndex = ToUnityIndex(pos[0], pos[1], MaxX, MaxY);
+                tilemap.SetEditorPreviewTile(new Vector3Int(unityIndex.x, unityIndex.y), tile);
+                tilemap.SetTile(new Vector3Int(unityIndex.x, unityIndex.y), tile);
             }
+        }
+
+        private Vector2Int ToUnityIndex(int x, int y, int w, int h)
+        {
+            return new Vector2Int(x, y);
+            // return new Vector2Int(x, h - y-1);
         }
 
         private string HashSprite(Sprite value)
