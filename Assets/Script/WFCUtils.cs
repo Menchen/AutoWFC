@@ -8,9 +8,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Script.GenericUtils;
-using UnityEngine;
+using Debug = UnityEngine.Debug;
 using Random = System.Random;
 using V = TypedArray<int>;
 
@@ -275,7 +276,7 @@ namespace WFC
                 // var r =(float)(mantissa * exponent);
 
                 // TODO Fix random float
-                var r = new Unity.Mathematics.Random((uint) DateTimeOffset.UtcNow.Millisecond).NextFloat(0, sum);
+                var r = new Unity.Mathematics.Random(((uint) random.Next()) + 7).NextFloat(0, sum);
                 var accumulator = 0f;
                 for (int i = 0; i < distributionList.Length; i++)
                 {
