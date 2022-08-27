@@ -18,7 +18,24 @@ namespace WFC
             public double SumWeightsLogWeights { get; set; }
             public double Entropy { get; set; }
 
-            public Element(Wave w, BitArray mask)
+            // public Element(Wave w, BitArray mask)
+            // {
+            //     Coefficient = new BitArray(mask);
+            //     Popcnt = mask.GetCardinality();
+            //     for (int i = 0; i < Coefficient.Count; i++)
+            //     {
+            //         if (!Coefficient[i])
+            //         {
+            //             continue;
+            //         }
+            //
+            //         var weight = w.Wfc.Patterns[i].Frequency;
+            //         this.SumWeights += weight;
+            //         this.SumWeightsLogWeights += weight * Math.Log(weight);
+            //     }
+            // }
+            
+            public void Initialize(Wave w, BitArray mask)
             {
                 Coefficient = new BitArray(mask);
                 Popcnt = mask.GetCardinality();
@@ -37,13 +54,13 @@ namespace WFC
 
             public bool Apply(Wave w, BitArray mask)
             {
-                var diff = this.Coefficient.And(mask);
+                var diff = new BitArray(this.Coefficient).And(mask);
                 if (diff.GetCardinality() == 0)
                 {
                     return true;
                 }
 
-                this.Coefficient = diff;
+                this.Coefficient.And(mask);
 
                 for (int i = 0; i < Coefficient.Count; i++)
                 {
@@ -57,8 +74,9 @@ namespace WFC
                     this.SumWeightsLogWeights -= weight * Math.Log(weight);
                 }
 
-                this.Entropy = Math.Log(this.SumWeights) - (this.SumWeightsLogWeights / this.SumWeights);
+                // this.Entropy = Math.Log(this.SumWeights) - (this.SumWeightsLogWeights / this.SumWeights);
                 this.Popcnt = this.Coefficient.GetCardinality();
+                this.Entropy = Popcnt;
                 return this.Popcnt != 0;
             }
 

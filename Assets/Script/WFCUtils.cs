@@ -10,6 +10,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Script.GenericUtils;
+using UnityEngine;
 using Random = System.Random;
 using V = TypedArray<int>;
 
@@ -68,17 +69,17 @@ namespace WFC
             
             PatternSizeVec = Enumerable.Repeat(PatternSize, PatternSize).ToArray();
 
-
             Patterns = new List<Pattern>();
             
-            // get pattern data from input 
+            // Get pattern data from input 
             var sizeInputLength = SizeInput.Value.Aggregate((a,b)=>a*b);
             for (int i = 0; i < sizeInputLength; i++)
             {
-                var data = DataAt(ArrayUtils.UnRavelIndex(SizeInput, i));
+                var index = ArrayUtils.UnRavelIndex(SizeInput, i);
+                var data = DataAt(index);
                 if (data is not null)
                 {
-                    Patterns.Add(new Pattern(data,Neighbours.Length,BITSetSize));
+                    Patterns.Add(new Pattern(data,Neighbours.Length,BITSetSize,Vol));
                 }
             }
 
@@ -86,7 +87,7 @@ namespace WFC
             var patternHashToFreq = new Dictionary<int, int>();
             foreach (var pattern in Patterns)
             {
-                patternHashToFreq[pattern.Hash]++;
+                patternHashToFreq[pattern.Hash] = patternHashToFreq.ContainsKey(pattern.Hash)? patternHashToFreq[pattern.Hash] + 1 : 1;
             }
 
             // Assign non normalized freq
@@ -95,6 +96,7 @@ namespace WFC
                 pattern.Frequency = patternHashToFreq[pattern.Hash];
             }
 
+            // Deduplicate
             Patterns = Patterns.GroupBy(e => e.Hash).Select(e => e.First()).ToList();
 
             // TODO Add rotation, reflections
@@ -142,7 +144,7 @@ namespace WFC
                             }
                             
                             var vecP = p.Data[ArrayUtils.RavelIndex(PatternSizeVec, offsetP)!.Value];
-                            var vecQ = p.Data[ArrayUtils.RavelIndex(PatternSizeVec, offsetQ)!.Value];
+                            var vecQ = q.Data[ArrayUtils.RavelIndex(PatternSizeVec, offsetQ)!.Value];
 
                             if (!EqualityComparer<T>.Default.Equals(vecP,vecQ))
                             {
@@ -221,5 +223,76 @@ namespace WFC
 
         }
         
+        public static class NextCell
+        {
+            public static Element MinEntropy(Wave w)
+            {
+                var minValue = int.MaxValue;
+                Element minElement = null;
+                foreach (var element in w.wave)
+                {
+                    if (!element.Collapsed && element.Popcnt < minValue)
+                    {
+                        minElement = element;
+                        minValue = element.Popcnt;
+                    }
+                }
+
+                if (minElement is null)
+                {
+                    throw new InvalidOperationException("Failed to find Next Cell");
+                }
+                return minElement;
+            }
+        }
+
+        public static class SelectPattern
+        {
+            public static int PatternWeighted(Wave w, Element e)
+            {
+                var sum = 0f;
+                var distributionList = new float[e.Coefficient.Count];
+                for (int i = 0; i < e.Coefficient.Count; i++)
+                {
+                    if (!e.Coefficient[i])
+                    {
+                        continue;
+                    }
+
+                    distributionList[i] = w.Wfc.Patterns[i].Frequency;
+                    sum += w.Wfc.Patterns[i].Frequency;
+                }
+
+                var random = w.Wfc.Random;
+                
+
+                // Random float with upper/lower bound
+                // https://stackoverflow.com/a/3365388
+                
+                // double mantissa = (random.NextDouble() * 2.0) - 1.0;
+                // // choose -149 instead of -126 to also generate subnormal floats (*)
+                // double exponent = Math.Pow(2.0, random.Next(-126, 128));
+                // var r =(float)(mantissa * exponent);
+
+                // TODO Fix random float
+                var r = new Unity.Mathematics.Random((uint) DateTimeOffset.UtcNow.Millisecond).NextFloat(0, sum);
+                var accumulator = 0f;
+                for (int i = 0; i < distributionList.Length; i++)
+                {
+                    accumulator += distributionList[i];
+
+                    if (accumulator >= r)
+                    {
+                        return i;
+                    }
+                }
+
+                // throw new InvalidOperationException($"Failed to select pattern for {string.Join(",", e.Pos.Value)}");
+                Debug.Log($"Failed to select pattern for {string.Join(",", e.Pos.Value)}");
+                return -1;
+            }
+        }
+        
     }
+
 }

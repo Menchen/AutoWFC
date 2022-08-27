@@ -13,7 +13,7 @@ namespace Script
             TilesetSlicer slicer = (TilesetSlicer) target;
             if (GUILayout.Button("Slice"))
             {
-                slicer.SliceCurrentTileSet();
+                slicer.WFCThis();
             }
         }
     }

@@ -4,10 +4,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
+using Script.GenericUtils;
+using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.Tilemaps;
+using WFC;
 
 
 namespace Script
@@ -22,7 +25,72 @@ namespace Script
         public int pixelPerUnit;
 
 
+        public void WFCThis()
+        {
+            if (tileSet is null)
+            {
+                return;
+            }
+            
+            tileSet.filterMode = FilterMode.Point;
+            
+            var sprites = Resources.LoadAll<Sprite>(tileSet.name);
+            var lookup = sprites.GroupBy(HashSprite).ToDictionary(e => e.Key, e => e.First());
+            var hashedSpriteInput = new string[sprites.Length];
+            // var hashedSpriteInput = sprites.Select(HashSprite).ToArray();
+            
+            var sizeInput = new[] {MaxX, MaxY};
+            int x = 0;
+            int y = MaxY-1;
 
+            string t = null;
+            foreach (var sprite in sprites)
+            {
+                var index = ArrayUtils.RavelIndex(sizeInput, new[] {x, y}).Value;
+                hashedSpriteInput[index] = HashSprite(sprite);
+                if (x==9 && y == 19)
+                {
+                    t = HashSprite(sprite);
+                }
+                
+                x++;
+                if (x >= MaxX)
+                {
+                    x = 0;
+                    y--;
+                }
+            }
+            var preset = new string[sprites.Length];
+            preset[sprites.Length / 2] = t;
+            
+            var wfc = new WfcUtils<string>(2,3,sprites.Length,sizeInput,hashedSpriteInput,WfcUtils<string>.SelectPattern.PatternWeighted,WfcUtils<string>.NextCell.MinEntropy,e=>{},BorderBehavior.EXCLUDE,new System.Random(),0,new Neibours2<object>(),null);
+            var colaped = wfc.Collapse(sizeInput,out var output,preset);
+
+            var tilemap = GetComponent<Tilemap>();
+            tilemap.ClearAllTiles();
+            tilemap.ClearAllEditorPreviewTiles();
+
+            for (int i = 0; i < ArrayUtils.GetVolume(sizeInput); i++)
+            {
+                var pos = ArrayUtils.UnRavelIndex(sizeInput, i);
+                var tile = ScriptableObject.CreateInstance<Tile>();
+                
+                tile.sprite = output[i] is null ? null : lookup[output[i]];
+                tilemap.SetEditorPreviewTile(new Vector3Int(pos[0], pos[1]), tile);
+                tilemap.SetTile(new Vector3Int(pos[0], pos[1]), tile);
+            }
+        }
+
+        private string HashSprite(Sprite value)
+        {
+            var hash128 = new Hash128();
+            var x = Mathf.FloorToInt(value.rect.x);
+            var y = Mathf.FloorToInt(value.rect.y);
+            var w = Mathf.FloorToInt(value.rect.width);
+            var h = Mathf.FloorToInt(value.rect.height);
+            hash128.Append(value.texture.GetPixels(x, y, w, h));
+            return hash128.ToString();
+        }
 
         public void SliceCurrentTileSet()
         {

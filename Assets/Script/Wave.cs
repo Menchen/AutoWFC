@@ -45,6 +45,10 @@ namespace WFC
             public V? Observe(Element e)
             {
                 var n = this.Wfc.PatternFn(this, e);
+                if (n < 0)
+                {
+                    return e.Pos;
+                }
                 return this.Collapse(e, n);
             }
 
@@ -65,12 +69,12 @@ namespace WFC
                     {
                         neighbors[i] = null;
 
-                        // ReSharper disable once CoVariantArrayConversion
-                        if (Wfc.Neighbours.TryGet(wave, e.Pos, Wfc.Neighbours.Neighbours[i],
-                                out var output))
+                        var offset = Wfc.Neighbours.Neighbours[i].Zip(e.Pos.Value, (a, b) => a + b).ToArray();
+                        var outputIndex = ArrayUtils.InBounds(SizeWave,offset) ? ArrayUtils.RavelIndex(SizeWave, offset) : null;
+                        if (outputIndex is not null)
                         {
-                            var neighbourElement = output as Element;
-                            if (neighbourElement!.Collapsed)
+                            var neighbourElement = wave[outputIndex.Value];;
+                            if (neighbourElement.Collapsed)
                             {
                                 continue;
                             }
@@ -81,7 +85,7 @@ namespace WFC
 
                     // Calculate superpatterns valid neighbours
                     var neighbourPatterns = Enumerable.Range(0, Wfc.Neighbours.Length)
-                        .Select(_ => new BitArray(Wfc.Neighbours.Length)).ToArray();
+                        .Select(_ => new BitArray(Wfc.BITSetSize)).ToArray();
                     for (int i = 0; i < e.Coefficient.Length; i++)
                     {
                         if (!e.Coefficient[i])
@@ -156,8 +160,12 @@ namespace WFC
 
                 for (int i = 0; i < this.wave.Length; i++)
                 {
-                    wave[i] = new Element(this, this.Wfc.MaskUsed);
-                    wave[i].Pos = ArrayUtils.UnRavelIndex(SizeWave, i);
+                    // wave[i] = new Element(this, this.Wfc.MaskUsed);
+                    wave[i] = new Element
+                    {
+                        Pos = ArrayUtils.UnRavelIndex(SizeWave, i)
+                    };
+                    wave[i].Initialize(this,Wfc.MaskUsed);
                 }
 
                 // Load preset value if present

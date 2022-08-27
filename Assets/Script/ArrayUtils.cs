@@ -1,9 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using JetBrains.Annotations;
 
 public static class ArrayUtils
 {
+    public static int GetVolume(int[] size)
+    {
+        return size.Aggregate((a, b) => a * b);
+    }
     public static bool InBounds(int[] size, int pos)
     {
         return pos >=0 && pos < size.Aggregate((a, b) => a * b) ;
@@ -14,6 +19,7 @@ public static class ArrayUtils
         return pos.All(e=>e>=0) && size.Zip(pos, (a, b) => a - b).All(e => e > 0);
     }
     
+    [CanBeNull]
     public static int[] UnRavelIndex(int[] size, int index)
     {
         var prefix = new int[size.Length + 1];
@@ -26,13 +32,13 @@ public static class ArrayUtils
 
         if (index < 0 || index > prefix[^1])
         {
-            
+            return null;
         }
         
         var result = new int[size.Length];
         for (int i = 0; i < result.Length; i++)
         {
-            result[0] = (index % prefix[i + 1]) / prefix[i];
+            result[i] = (index % prefix[i + 1]) / prefix[i];
         }
 
         return result;
