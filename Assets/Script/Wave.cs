@@ -177,6 +177,7 @@ namespace WFC
                         {
                             wave[i].Value = Preset[i];
                             NumCollapsed++;
+                            // TODO Propagate super pattern
                         }
                     }
                 }

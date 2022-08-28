@@ -68,7 +68,7 @@ namespace WFC
             EmptyState = emptyState;
             
             
-            PatternSizeVec = Enumerable.Repeat(PatternSize, PatternSize).ToArray();
+            PatternSizeVec = Enumerable.Repeat(PatternSize, Dimension).ToArray();
 
             Patterns = new List<Pattern>();
             
@@ -163,6 +163,8 @@ namespace WFC
 
                 }
             }
+            
+            
         }
 
         public bool Collapse(V sizeOut, out T[] output, T[] preset = null)

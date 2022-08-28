@@ -63,7 +63,7 @@ namespace Script
             var preset = new string[sprites.Length];
             // preset[sprites.Length / 2] = t;
             
-            var wfc = new WfcUtils<string>(2,9,sprites.Length,sizeInput,hashedSpriteInput,WfcUtils<string>.SelectPattern.PatternWeighted,WfcUtils<string>.NextCell.MinEntropy,e=>{},BorderBehavior.EXCLUDE,new System.Random(),0,new Neibours2<object>(),null);
+            var wfc = new WfcUtils<string>(2,3,sprites.Length,sizeInput,hashedSpriteInput,WfcUtils<string>.SelectPattern.PatternWeighted,WfcUtils<string>.NextCell.MinEntropy,e=>{},BorderBehavior.WRAP,new System.Random(),0,new Neibours2<object>(),null);
             var colaped = wfc.Collapse(sizeInput,out var output,preset);
 
             var tilemap = GetComponent<Tilemap>();
