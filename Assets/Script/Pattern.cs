@@ -10,6 +10,10 @@ namespace WFC
     {
         public class Pattern
         {
+            public Pattern()
+            {
+                
+            }
             public Pattern(T[] data, int neighbourLength,int bitsetSize,int vol)
             {
                 this.Data = data ?? throw new ArgumentNullException();
