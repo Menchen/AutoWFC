@@ -19,6 +19,7 @@ namespace Script
     {
 
         public Texture2D tileSet;
+        public Vector2Int OutputSize;
 
         public string tileSetPath = "generatedTileset";
         public GameObject tilePallet;
@@ -39,44 +40,46 @@ namespace Script
             var hashedSpriteInput = new string[sprites.Length];
             // var hashedSpriteInput = sprites.Select(HashSprite).ToArray();
             
-            var sizeInput = new[] {MaxX, MaxY};
+            var sizeInput = new[] {MaxX, sprites.Length/MaxX};
             int x = 0;
             int y = MaxY-1;
 
-            string t = null;
-            foreach (var sprite in sprites)
-            {
-                var index = ArrayUtils.RavelIndex(sizeInput, new[] {x, y}).Value;
-                hashedSpriteInput[index] = HashSprite(sprite);
-                if (x==9 && y == 19)
-                {
-                    t = HashSprite(sprite);
-                }
-                
-                x++;
-                if (x >= MaxX)
-                {
-                    x = 0;
-                    y--;
-                }
-            }
+            hashedSpriteInput = sprites.Select(HashSprite).ToArray();
+            // string t = null;
+            // foreach (var sprite in sprites)
+            // {
+            //     var index = ArrayUtils.RavelIndex(sizeInput, new[] {x, y}).Value;
+            //     hashedSpriteInput[index] = HashSprite(sprite);
+            //     if (x==9 && y == 19)
+            //     {
+            //         t = HashSprite(sprite);
+            //     }
+            //     
+            //     x++;
+            //     if (x >= MaxX)
+            //     {
+            //         x = 0;
+            //         y--;
+            //     }
+            // }
             var preset = new string[sprites.Length];
             // preset[sprites.Length / 2] = t;
-            
+
+            var outputVec = new[] {OutputSize.x, OutputSize.y};
             var wfc = new WfcUtils<string>(2,3,sprites.Length,sizeInput,hashedSpriteInput,WfcUtils<string>.SelectPattern.PatternUniform,WfcUtils<string>.NextCell.MinEntropy,e=>{},BorderBehavior.WRAP,new System.Random(DateTime.Now.Millisecond),0,new Neibours2<object>(),null);
-            var colaped = wfc.Collapse(sizeInput,out var output,preset);
+            var colaped = wfc.Collapse(outputVec,out var output);
 
             var tilemap = GetComponent<Tilemap>();
             tilemap.ClearAllTiles();
             tilemap.ClearAllEditorPreviewTiles();
 
-            for (int i = 0; i < ArrayUtils.GetVolume(sizeInput); i++)
+            for (int i = 0; i < output.Length; i++)
             {
-                var pos = ArrayUtils.UnRavelIndex(sizeInput, i);
+                var pos = ArrayUtils.UnRavelIndex(outputVec, i);
                 var tile = ScriptableObject.CreateInstance<Tile>();
                 
                 tile.sprite = output[i] is null ? null : lookup[output[i]];
-                var unityIndex = ToUnityIndex(pos[0], pos[1], MaxX, MaxY);
+                var unityIndex = ToUnityIndex(pos[0], pos[1], outputVec[0], outputVec[1]);
                 tilemap.SetEditorPreviewTile(new Vector3Int(unityIndex.x, unityIndex.y), tile);
                 tilemap.SetTile(new Vector3Int(unityIndex.x, unityIndex.y), tile);
             }
@@ -84,8 +87,8 @@ namespace Script
 
         private Vector2Int ToUnityIndex(int x, int y, int w, int h)
         {
-            return new Vector2Int(x, y);
-            // return new Vector2Int(x, h - y-1);
+            // return new Vector2Int(x, y);
+            return new Vector2Int(x, h - y-1);
         }
 
         private string HashSprite(Sprite value)

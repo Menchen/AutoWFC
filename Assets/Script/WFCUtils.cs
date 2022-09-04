@@ -93,7 +93,8 @@ namespace WFC
                     var offset = index!.Zip(Neighbours.Neighbours[j], (a, b) => a + b).ToArray();
                     if (ArrayUtils.InBounds(sizeInput,offset))
                     {
-                        var value = Input[ArrayUtils.RavelIndex(SizeInput, offset)!.Value];
+                        var pos = ArrayUtils.RavelIndex(SizeInput, offset)!.Value;
+                        var value = Input[pos];
 
                         listArray[j].Add(value);
                     }
