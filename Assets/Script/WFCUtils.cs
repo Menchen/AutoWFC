@@ -1,7 +1,6 @@
 /*
- * Credit:
- * Original C++ by jdah
- * C# Port by Mengchen
+ * Created by Mengchen
+ * Inspired with C++ version by jdah
  * https://gist.github.com/jdah/ad997b858513a278426f8d91317115b9
 */
 
@@ -338,19 +337,8 @@ namespace WFC
                     sum += w.Wfc.Patterns[i].Frequency;
                 }
 
-                var random = w.Wfc.Random;
-                
-
-                // Random float with upper/lower bound
-                // https://stackoverflow.com/a/3365388
-                
-                // double mantissa = (random.NextDouble() * 2.0) - 1.0;
-                // // choose -149 instead of -126 to also generate subnormal floats (*)
-                // double exponent = Math.Pow(2.0, random.Next(-126, 128));
-                // var r =(float)(mantissa * exponent);
-
-                // TODO Fix random float
-                var r = new Unity.Mathematics.Random(((uint) random.Next()) + 7).NextFloat(0, sum);
+                // Random Double in range (0,sum)
+                var r = w.Wfc.Random.NextDouble()*sum;
                 var accumulator = 0f;
                 for (int i = 0; i < distributionList.Length; i++)
                 {
