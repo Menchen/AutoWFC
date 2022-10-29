@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 using Script.GenericUtils;
 using Unity.VisualScripting;
 using UnityEditor;
+using UnityEditor.Tilemaps;
 using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.Tilemaps;
@@ -15,15 +16,29 @@ using WFC;
 
 namespace Script
 {
+    [RequireComponent(typeof(Tilemap))]
     public class TilesetSlicer : MonoBehaviour
     {
 
+        public BoundsInt? CurrentSelection;
         public Texture2D tileSet;
         public Vector2Int OutputSize;
+        public bool ActiveSelection;
+
+        [SerializeField]
+        private Style ColorScheme;
+        
+        [Serializable]
+        private class Style
+        {
+            public Color HoverColor = Color.white;
+            public Color ClickColor = Color.yellow;
+            public Color SelectColor = new Color(255/255f, 165/255f, 0f);
+        }
 
         public void WFCThis()
         {
-            if (tileSet is null)
+            if (tileSet is null || OutputSize == Vector2Int.zero)
             {
                 return;
             }
