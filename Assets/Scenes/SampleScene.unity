@@ -6929,12 +6929,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   tileSet: {fileID: 2800000, guid: 97f71693a8a06bf42a446859469c0bc7, type: 3}
-  OutputSize: {x: 16, y: 16}
-  ActiveSelection: 0
-  ColorScheme:
-    HoverColor: {r: 1, g: 1, b: 1, a: 1}
-    ClickColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-    SelectColor: {r: 1, g: 0.64705884, b: 0, a: 1}
+  outputSize: {x: 16, y: 16}
+  colorScheme:
+    hoverColor: {r: 1, g: 1, b: 1, a: 1}
+    clickColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+    selectColor: {r: 1, g: 0.64705884, b: 0, a: 1}
+  JsonFile: {fileID: 4900000, guid: 2f44cb1dbc7715447827c7ac40fe8b8c, type: 3}
 --- !u!483693784 &1541774250
 TilemapRenderer:
   m_ObjectHideFlags: 0

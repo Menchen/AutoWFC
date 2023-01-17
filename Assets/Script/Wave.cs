@@ -15,7 +15,7 @@ namespace WFC
 
             public int SizeWaveLength => SizeWave.Value.Aggregate(((a, b) => a * b));
 
-            public Element[] wave;
+            public Element[] CurrentWave;
 
             public readonly T[] Preset;
 
@@ -73,7 +73,7 @@ namespace WFC
                         var outputIndex = ArrayUtils.InBounds(SizeWave,offset) ? ArrayUtils.RavelIndex(SizeWave, offset) : null;
                         if (outputIndex is not null)
                         {
-                            var neighbourElement = wave[outputIndex.Value];;
+                            var neighbourElement = CurrentWave[outputIndex.Value];;
                             if (neighbourElement.Collapsed)
                             {
                                 continue;
@@ -156,16 +156,16 @@ namespace WFC
             public TypedArray<int>? Collapse()
             {
                 // Initialize the wave, all patterns are valid for each element
-                this.wave = new Element[this.SizeWaveLength];
+                this.CurrentWave = new Element[this.SizeWaveLength];
 
-                for (int i = 0; i < this.wave.Length; i++)
+                for (int i = 0; i < this.CurrentWave.Length; i++)
                 {
                     // wave[i] = new Element(this, this.Wfc.MaskUsed);
-                    wave[i] = new Element
+                    CurrentWave[i] = new Element
                     {
                         Pos = ArrayUtils.UnRavelIndex(SizeWave, i)
                     };
-                    wave[i].Initialize(this,Wfc.MaskUsed);
+                    CurrentWave[i].Initialize(this,Wfc.MaskUsed);
                 }
 
                 // Load preset value if present
@@ -175,14 +175,14 @@ namespace WFC
                     {
                         if (Preset[i] is not null)
                         {
-                            wave[i].Value = Preset[i];
+                            CurrentWave[i].Value = Preset[i];
                             NumCollapsed++;
                             // TODO Propagate super pattern
                         }
                     }
                 }
 
-                while (NumCollapsed != this.wave.Length)
+                while (NumCollapsed != this.CurrentWave.Length)
                 {
                     var e = Wfc.NextCellFn(this);
 

@@ -10,27 +10,27 @@ using Random = System.Random;
 
 namespace Script
 {
-    public class WFC
+    public class Wfc
     {
 
-        public Vector2Int size;
-        public TileData<Tile>[] map;
+        public Vector2Int Size;
+        public TileData<Tile>[] Map;
         public PriorityQueue<Vector2Int,int> PriorityQueue;
-        public Dictionary<string, TileRelationship> rules;
+        public Dictionary<string, TileRelationship> Rules;
 
-        private Dictionary<string, int> tileDict;
+        private Dictionary<string, int> _tileDict;
 
-        private bool[,,] states;
+        private bool[,,] _states;
 
-        private bool[,] colapsed;
+        private bool[,] _colapsed;
 
-        private int colapsedCount = 0;
+        private int _colapsedCount = 0;
 
-        public WFC(Dictionary<string, TileRelationship> rules, Vector2Int size, TileData<Tile>[] map)
+        public Wfc(Dictionary<string, TileRelationship> rules, Vector2Int size, TileData<Tile>[] map)
         {
-            this.rules = rules;
-            this.size = size;
-            this.map = map;
+            this.Rules = rules;
+            this.Size = size;
+            this.Map = map;
 
             PriorityQueue = new PriorityQueue<Vector2Int, int>();
             if (map.Length != size.x * size.y)
@@ -38,15 +38,15 @@ namespace Script
                 throw new ArgumentException("Map length do not match with size");
             }
 
-            tileDict = new Dictionary<string, int>();
+            _tileDict = new Dictionary<string, int>();
             var counter = 0;
             foreach (var uniqTile in map.DistinctBy(e=>e.Hash))
             {
-                tileDict[uniqTile.Hash] = counter;
+                _tileDict[uniqTile.Hash] = counter;
                 counter++;
             }
-            states = new bool[size.x,size.y,tileDict.Count];
-            colapsed = new bool[size.x, size.y];
+            _states = new bool[size.x,size.y,_tileDict.Count];
+            _colapsed = new bool[size.x, size.y];
 
             foreach (var tileData in map)
             {
@@ -67,7 +67,7 @@ namespace Script
             while (PriorityQueue.Count > 0)
             {
                 var element = PriorityQueue.Dequeue();
-                if (!colapsed[element.x,element.y])
+                if (!_colapsed[element.x,element.y])
                 {
                     Collapse(element.x,element.y);
                     return true;
@@ -80,21 +80,21 @@ namespace Script
 
         public void WriteToFile(out string[,]finalMap)
         {
-            finalMap = new string[states.GetLength(0), states.GetLength(1)];
-            for (int x = 0; x < states.GetLength(0); x++)
+            finalMap = new string[_states.GetLength(0), _states.GetLength(1)];
+            for (int x = 0; x < _states.GetLength(0); x++)
             {
-                for (int y = 0; y < states.GetLength(1); y++)
+                for (int y = 0; y < _states.GetLength(1); y++)
                 {
-                    for (int i = 0; i < states.GetLength(2); i++)
+                    for (int i = 0; i < _states.GetLength(2); i++)
                     {
                         if (CountState(x,y,false) == 0)
                         {
                             Debug.Log($"x:{x}_y:{y}");
                             break;
                         }
-                        if (!states[x,y,i])
+                        if (!_states[x,y,i])
                         {
-                            finalMap[x, y] = tileDict.First(e => e.Value == i).Key;
+                            finalMap[x, y] = _tileDict.First(e => e.Value == i).Key;
                         }
                     }
                 }
@@ -113,7 +113,7 @@ namespace Script
 
         private void Collapse(int x,int y,string value = null)
         {
-            if (colapsed[x,y])
+            if (_colapsed[x,y])
             {
                 return;
             }
@@ -122,11 +122,11 @@ namespace Script
 
 
             // var tile = map[TileUtils.MapIndex(x, y, size.x)];
-            var rule = rules[finalTile];
-            SetTrueExcept(ref states,x,y,new []{tileDict[finalTile]});
-            colapsedCount++;
-            colapsed[x, y] = true;
-            var neighbors = TileUtils.GetNeighbors(map, x, y, size.x, size.y);
+            var rule = Rules[finalTile];
+            SetTrueExcept(ref _states,x,y,new []{_tileDict[finalTile]});
+            _colapsedCount++;
+            _colapsed[x, y] = true;
+            var neighbors = TileUtils.GetNeighbors(Map, x, y, Size.x, Size.y);
 
             
 
@@ -137,8 +137,8 @@ namespace Script
                     continue;
                 }
 
-                var mask = rule.Rules[dir].Keys.Select(e=>tileDict[e]);
-                SetTrueExcept(ref states,neighbors[dir].Position.x,neighbors[dir].Position.y,mask);
+                var mask = rule.Rules[dir].Keys.Select(e=>_tileDict[e]);
+                SetTrueExcept(ref _states,neighbors[dir].Position.x,neighbors[dir].Position.y,mask);
                 PriorityQueue.Enqueue(new Vector2Int(neighbors[dir].Position.x,neighbors[dir].Position.y),CountState(x,y));
             }
 
@@ -148,9 +148,9 @@ namespace Script
         private int CountState(int x, int y, bool state = false)
         {
             int count = 0;
-            for (int i = 0; i < states.GetLength(2); i++)
+            for (int i = 0; i < _states.GetLength(2); i++)
             {
-                if (states[x,y,i] == state)
+                if (_states[x,y,i] == state)
                 {
                     count++;
                 }
@@ -178,9 +178,9 @@ namespace Script
         {
             var posibility = new List<int>();
             var max = Int32.MinValue;
-            for (int i = 0; i < states.GetLength(2); i++)
+            for (int i = 0; i < _states.GetLength(2); i++)
             {
-                if (states[x,y,i])
+                if (_states[x,y,i])
                 {
                     continue;
                 }
@@ -195,7 +195,7 @@ namespace Script
             }
 
             var index = new Random(DateTime.Now.GetHashCode()).Next(posibility.Count);
-            return tileDict.First(e => e.Value == posibility[index]).Key;
+            return _tileDict.First(e => e.Value == posibility[index]).Key;
         }
     }
 }

@@ -63,7 +63,7 @@ namespace Script
             
         }
 
-        private BoundsInt BoundsIntFrom2Points(Vector3Int a, Vector3Int b)
+        public static BoundsInt BoundsIntFrom2Points(Vector3Int a, Vector3Int b)
         {
             var xMin = Math.Min(a.x, b.x);
             var xMax = Math.Max(a.x, b.x);
@@ -139,11 +139,10 @@ namespace Script
             // SelectionActive = GridSelection.active;
             TilesetSlicer slicer = (TilesetSlicer) target;
             // GridEditorUtility.
-            slicer.ActiveSelection = GridSelection.active;
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Slice"))
+            if (GUILayout.Button("Generate"))
             {
-                slicer.WFCThis();
+                slicer.WfcThis();
             }
 
             _selectActive = GUILayout.Toggle(_selectActive, "Select");

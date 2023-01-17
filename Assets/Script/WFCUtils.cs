@@ -140,102 +140,6 @@ namespace WFC
 
 
             Patterns = patternsDict.Select(e=>e.Value).ToList();
-
-
-
-
-
-            // for (int i = 0; i < sizeInputLength; i++)
-            // {
-            //     var index = ArrayUtils.UnRavelIndex(SizeInput, i);
-            //     var data = DataAt(index);
-            //     if (data is not null)
-            //     {
-            //         Patterns.Add(new Pattern(data,Neighbours.Length,BITSetSize,Vol));
-            //     }
-            // }
-            //
-            // // Compute freq hashmap
-            // var patternHashToFreq = new Dictionary<int, int>();
-            // foreach (var pattern in Patterns)
-            // {
-            //     patternHashToFreq[pattern.Hash] = patternHashToFreq.ContainsKey(pattern.Hash)? patternHashToFreq[pattern.Hash] + 1 : 1;
-            // }
-            //
-            // // Assign non normalized freq
-            // foreach (var pattern in Patterns)
-            // {
-            //     pattern.Frequency = patternHashToFreq[pattern.Hash];
-            // }
-            //
-            // // Deduplicate
-            // Patterns = Patterns.GroupBy(e => e.Hash).Select(e => e.First()).ToList();
-            //
-            // // TODO Add rotation, reflections
-            //
-            // // Compute total sum of freq
-            // float freqTotal = 0f;
-            // foreach (var pattern in Patterns)
-            // {
-            //     freqTotal += pattern.Frequency;
-            // }
-            //
-            // // Normalize final freq
-            // foreach (var pattern in Patterns)
-            // {
-            //     pattern.Frequency /= freqTotal;
-            // }
-            //
-            // // Calculate mask & Id
-            // MaskUsed = new BitArray(BITSetSize);
-            //
-            // for (int i = 0; i < Patterns.Count; i++)
-            // {
-            //     Patterns[i].Id = i;
-            //     MaskUsed.Set(i,true);
-            // }
-            //
-            // // Calculate valid pattern for each possible neighnours
-            // foreach (var p in Patterns)
-            // {
-            //     foreach (var q in Patterns)
-            //     {
-            //         for (int i = 0; i < Neighbours.Length; i++)
-            //         {
-            //             var neighbour = Neighbours.Neighbours[i];
-            //             var valid = true;
-            //             for (int s = 0; s < Vol; s++)
-            //             {
-            //                 var offsetQ = ArrayUtils.UnRavelIndex(PatternSizeVec, s);
-            //
-            //                 var offsetP = neighbour.Zip(offsetQ, (a, b) => a + b).ToArray();
-            //
-            //                 if (!ArrayUtils.InBounds(PatternSizeVec,offsetP))
-            //                 {
-            //                     continue;
-            //                 }
-            //                 
-            //                 var vecP = p.Data[ArrayUtils.RavelIndex(PatternSizeVec, offsetP)!.Value];
-            //                 var vecQ = q.Data[ArrayUtils.RavelIndex(PatternSizeVec, offsetQ)!.Value];
-            //
-            //                 if (!EqualityComparer<T>.Default.Equals(vecP,vecQ))
-            //                 {
-            //                     valid = false;
-            //                     break;
-            //                 }
-            //             }
-            //
-            //             if (valid)
-            //             {
-            //                 p.Valid[i].Set(q.Id,true);
-            //             }
-            //             
-            //         }
-            //
-            //     }
-            // }
-
-
         }
 
         public bool Collapse(V sizeOut, out T[] output, T[] preset = null)
@@ -248,7 +152,7 @@ namespace WFC
                 return false;
             }
 
-            output = w.wave.Select(e=>e.Value).ToArray();
+            output = w.CurrentWave.Select(e=>e.Value).ToArray();
             return true;
         }
 
@@ -260,7 +164,7 @@ namespace WFC
         {
             var northWest = center.Value.Select(e => e - (PatternSize / 2)).ToArray();
 
-            if (BorderBehavior == BorderBehavior.EXCLUDE)
+            if (BorderBehavior == BorderBehavior.Exclude)
             {
                 var southEast = northWest.Select(e => e + PatternSize - 1).ToArray();
                 if (!ArrayUtils.InBounds(SizeInput,northWest) || !ArrayUtils.InBounds(SizeInput,southEast))
@@ -276,19 +180,19 @@ namespace WFC
                 var pos = northWest.Zip(offset, (a,b) => a + b).ToArray();
                 switch (BorderBehavior)
                 {
-                    case BorderBehavior.EXCLUDE:
+                    case BorderBehavior.Exclude:
                         dst[i] = Input[ArrayUtils.RavelIndex(SizeInput, pos)!.Value];
                         break;
-                    case BorderBehavior.ZERO:
+                    case BorderBehavior.Zero:
                         if (!ArrayUtils.InBounds(SizeInput,pos))
                         {
                             dst[i] = EmptyState;
                         }
                         break;
-                    case BorderBehavior.CLAMP:
+                    case BorderBehavior.Clamp:
                         dst[i] = Input[ArrayUtils.RavelIndex(SizeInput, pos.Zip(SizeInput.Value,(v,s)=>Math.Clamp(v,0,s-1)).ToArray())!.Value];
                         break;
-                    case BorderBehavior.WRAP:
+                    case BorderBehavior.Wrap:
                         dst[i] = Input[ArrayUtils.RavelIndex(SizeInput, pos.Zip(SizeInput.Value,(v,s)=>((v%s)+s)%s).ToArray())!.Value];
                         break;
                 }
@@ -303,7 +207,7 @@ namespace WFC
             {
                 var minValue = int.MaxValue;
                 Element minElement = null;
-                foreach (var element in w.wave)
+                foreach (var element in w.CurrentWave)
                 {
                     if (!element.Collapsed && element.Popcnt < minValue)
                     {

@@ -31,6 +31,7 @@ namespace WFC
 
             private int? _cachedHash = null;
             public int Hash => _cachedHash ??= ((IStructuralEquatable) this.Data).GetHashCode(EqualityComparer<T>.Default);
+            // public int Hash => Value;
 
             public static bool operator ==(Pattern a, Pattern b)
             {

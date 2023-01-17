@@ -22,23 +22,24 @@ namespace Script
 
         public BoundsInt? CurrentSelection;
         public Texture2D tileSet;
-        public Vector2Int OutputSize;
-        public bool ActiveSelection;
+        [FormerlySerializedAs("OutputSize")] public Vector2Int outputSize;
 
-        [SerializeField]
-        private Style ColorScheme;
+        [FormerlySerializedAs("ColorScheme")] [SerializeField]
+        private Style colorScheme;
+
+        public TextAsset JsonFile;
         
         [Serializable]
         private class Style
         {
-            public Color HoverColor = Color.white;
-            public Color ClickColor = Color.yellow;
-            public Color SelectColor = new Color(255/255f, 165/255f, 0f);
+            [FormerlySerializedAs("HoverColor")] public Color hoverColor = Color.white;
+            [FormerlySerializedAs("ClickColor")] public Color clickColor = Color.yellow;
+            [FormerlySerializedAs("SelectColor")] public Color selectColor = new Color(255/255f, 165/255f, 0f);
         }
 
-        public void WFCThis()
+        public void WfcThis()
         {
-            if (tileSet is null || OutputSize == Vector2Int.zero)
+            if (tileSet is null || outputSize == Vector2Int.zero)
             {
                 return;
             }
@@ -49,16 +50,16 @@ namespace Script
             var pixelPerUnit = sprites[0].pixelsPerUnit;
             
             
-            int MaxY = Mathf.FloorToInt(tileSet.height / pixelPerUnit);
-            int MaxX = Mathf.FloorToInt(tileSet.width / pixelPerUnit);
+            int maxY = Mathf.FloorToInt(tileSet.height / pixelPerUnit);
+            int maxX = Mathf.FloorToInt(tileSet.width / pixelPerUnit);
             
             var lookup = sprites.GroupBy(HashSprite).ToDictionary(e => e.Key, e => e.First());
             var hashedSpriteInput = new string[sprites.Length];
             // var hashedSpriteInput = sprites.Select(HashSprite).ToArray();
             
-            var sizeInput = new[] {MaxX, sprites.Length/MaxX};
+            var sizeInput = new[] {maxX, sprites.Length/maxX};
             int x = 0;
-            int y = MaxY-1;
+            int y = maxY-1;
 
             hashedSpriteInput = sprites.Select(HashSprite).ToArray();
             // string t = null;
@@ -81,8 +82,16 @@ namespace Script
             var preset = new string[sprites.Length];
             // preset[sprites.Length / 2] = t;
 
-            var outputVec = new[] {OutputSize.x, OutputSize.y};
-            var wfc = new WfcUtils<string>(2,3,sprites.Length,sizeInput,hashedSpriteInput,WfcUtils<string>.SelectPattern.PatternUniform,WfcUtils<string>.NextCell.MinEntropy,e=>{},BorderBehavior.WRAP,new System.Random(DateTime.Now.Millisecond),0,new Neibours2<object>(),null);
+            var outputVec = new[] {outputSize.x, outputSize.y};
+            var wfc = new WfcUtils<string>(2,3,sprites.Length,sizeInput,hashedSpriteInput,WfcUtils<string>.SelectPattern.PatternUniform,WfcUtils<string>.NextCell.MinEntropy,e=>{},BorderBehavior.Wrap,new System.Random(DateTime.Now.Millisecond),0,new Neibours2<object>(),null);
+            if (JsonFile)
+            {
+                var json = JsonConvert.SerializeObject(wfc);
+                File.WriteAllText(AssetDatabase.GetAssetPath(JsonFile), json);
+                // TODO Move to Editor
+                EditorUtility.SetDirty(JsonFile);
+                
+            }
             var colaped = wfc.Collapse(outputVec,out var output);
 
             var tilemap = GetComponent<Tilemap>();

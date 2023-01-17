@@ -2,9 +2,9 @@
 {
     public enum BorderBehavior
     {
-        EXCLUDE,
-        ZERO,
-        CLAMP,
-        WRAP,
+        Exclude,
+        Zero,
+        Clamp,
+        Wrap,
     }
 }
