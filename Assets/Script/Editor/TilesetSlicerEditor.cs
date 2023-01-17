@@ -1,7 +1,6 @@
 using System;
 using UnityEditor;
 using UnityEditor.EditorTools;
-using UnityEditor.Tilemaps;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 using UnityEngine.UIElements;
@@ -143,6 +142,10 @@ namespace Script
             if (GUILayout.Button("Generate"))
             {
                 slicer.WfcThis();
+            }
+            if (GUILayout.Button("GenerateWithJson"))
+            {
+                slicer.WfcWithJson();
             }
 
             _selectActive = GUILayout.Toggle(_selectActive, "Select");

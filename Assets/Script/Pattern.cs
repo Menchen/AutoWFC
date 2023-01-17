@@ -2,6 +2,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Newtonsoft.Json;
+using Script.Converters;
 using V = TypedArray<int>;
 
 namespace WFC
@@ -27,9 +29,15 @@ namespace WFC
             public float Frequency { get; set; }
             public T Value { get; set; }
             public T[] Data { get; set; }
+            
+            [JsonProperty(ItemConverterType = typeof(BitArrayConverter))]
             public BitArray[] Valid {get; set; }
 
+             
+            [JsonIgnore]
             private int? _cachedHash = null;
+            
+            [JsonIgnore]
             public int Hash => _cachedHash ??= ((IStructuralEquatable) this.Data).GetHashCode(EqualityComparer<T>.Default);
             // public int Hash => Value;
 

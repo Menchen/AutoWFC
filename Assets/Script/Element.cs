@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections;
+using Newtonsoft.Json;
+using Script.Converters;
 using V = TypedArray<int>;
 namespace WFC
 {
@@ -8,6 +10,7 @@ namespace WFC
         public class Element
         {
             public V Pos { get; set; }
+            [JsonConverter(typeof(BitArrayConverter))]
             public BitArray Coefficient { get; set; }
 
             public int Popcnt { get; set; }

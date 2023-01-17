@@ -9,6 +9,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Newtonsoft.Json;
+using Script.Converters;
 using Script.GenericUtils;
 using Debug = UnityEngine.Debug;
 using Random = System.Random;
@@ -28,10 +30,12 @@ namespace WFC
 
         public V SizeInput;
         
+        [JsonIgnore]
         public readonly T[] Input;
 
         public List<Pattern> Patterns;
 
+        [JsonConverter(typeof(BitArrayConverter))]
         public BitArray MaskUsed;
 
         public Random Random;
@@ -40,17 +44,24 @@ namespace WFC
 
         public BorderBehavior BorderBehavior;
 
+        [JsonIgnore]
         public Func<Wave, Element, int> PatternFn;
+        
+        [JsonIgnore]
         public Func<Wave, Element> NextCellFn;
+        
+        [JsonIgnore]
         public Action<Wave> OnPropagate;
 
         public readonly T EmptyState;
-        public INeibours<object> Neighbours;
+        
+        public INeibours Neighbours;
         public readonly int[] PatternSizeVec;
 
+        public WfcUtils(){}
         public WfcUtils(int dimension, int patternSize, int bitSetSize, V sizeInput, T[] input, Func<Wave, Element, int> patternFn,
             Func<Wave, Element> nextCellFn, Action<Wave> onPropagate, BorderBehavior borderBehavior, Random random,
-            int flags, INeibours<object> neighbours, T emptyState)
+            int flags, INeibours neighbours, T emptyState)
         {
             Dimension = dimension;
             PatternSize = patternSize;

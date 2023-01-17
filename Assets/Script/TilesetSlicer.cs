@@ -4,10 +4,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using Script.Converters;
 using Script.GenericUtils;
 using Unity.VisualScripting;
 using UnityEditor;
-using UnityEditor.Tilemaps;
 using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.Tilemaps;
@@ -27,6 +28,10 @@ namespace Script
         [FormerlySerializedAs("ColorScheme")] [SerializeField]
         private Style colorScheme;
 
+        
+        [TextArea(15,20)]
+        public string serializedJson;
+
         public TextAsset JsonFile;
         
         [Serializable]
@@ -35,6 +40,40 @@ namespace Script
             [FormerlySerializedAs("HoverColor")] public Color hoverColor = Color.white;
             [FormerlySerializedAs("ClickColor")] public Color clickColor = Color.yellow;
             [FormerlySerializedAs("SelectColor")] public Color selectColor = new Color(255/255f, 165/255f, 0f);
+        }
+
+        public void WfcWithJson()
+        {
+            
+            var sprites = Resources.LoadAll<Sprite>(tileSet.name);
+            var lookup = sprites.GroupBy(HashSprite).ToDictionary(e => e.Key, e => e.First());
+            
+            var wfc = JsonConvert.DeserializeObject<WfcUtils<string>>(serializedJson,new BitArrayConverter());
+            var outputVec = new[] {outputSize.x, outputSize.y};
+            if (JsonFile)
+            {
+                var json = JsonConvert.SerializeObject(wfc);
+                File.WriteAllText(AssetDatabase.GetAssetPath(JsonFile), json);
+                // TODO Move to Editor
+                EditorUtility.SetDirty(JsonFile);
+                
+            }
+            var colaped = wfc.Collapse(outputVec,out var output);
+
+            var tilemap = GetComponent<Tilemap>();
+            tilemap.ClearAllTiles();
+            tilemap.ClearAllEditorPreviewTiles();
+
+            for (int i = 0; i < output.Length; i++)
+            {
+                var pos = ArrayUtils.UnRavelIndex(outputVec, i);
+                var tile = ScriptableObject.CreateInstance<Tile>();
+                
+                tile.sprite = output[i] is null ? null : lookup[output[i]];
+                var unityIndex = ToUnityIndex(pos[0], pos[1], outputVec[0], outputVec[1]);
+                tilemap.SetEditorPreviewTile(new Vector3Int(unityIndex.x, unityIndex.y), tile);
+                tilemap.SetTile(new Vector3Int(unityIndex.x, unityIndex.y), tile);
+            }
         }
 
         public void WfcThis()
@@ -81,9 +120,17 @@ namespace Script
             // }
             var preset = new string[sprites.Length];
             // preset[sprites.Length / 2] = t;
+            var ba = new BitArray(32,false);
+
+//var q = (bool[]) ba;
+            var jsonx = JsonConvert.SerializeObject(ba, new BitArrayConverter());
+            Console.WriteLine(jsonx);
+            var obj = JsonConvert.DeserializeObject<BitArray>(jsonx,new BitArrayConverter());
+            Console.WriteLine(obj);
 
             var outputVec = new[] {outputSize.x, outputSize.y};
-            var wfc = new WfcUtils<string>(2,3,sprites.Length,sizeInput,hashedSpriteInput,WfcUtils<string>.SelectPattern.PatternUniform,WfcUtils<string>.NextCell.MinEntropy,e=>{},BorderBehavior.Wrap,new System.Random(DateTime.Now.Millisecond),0,new Neibours2<object>(),null);
+            var wfc = new WfcUtils<string>(2,3,sprites.Length,sizeInput,hashedSpriteInput,WfcUtils<string>.SelectPattern.PatternUniform,WfcUtils<string>.NextCell.MinEntropy,e=>{},BorderBehavior.Wrap,new System.Random(DateTime.Now.Millisecond),0,new Neibours2(),null);
+            serializedJson = JsonConvert.SerializeObject(wfc,new JsonConverter[] {new BitArrayConverter()}); 
             if (JsonFile)
             {
                 var json = JsonConvert.SerializeObject(wfc);
