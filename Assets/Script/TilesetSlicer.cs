@@ -47,8 +47,8 @@ namespace Script
             
             var sprites = Resources.LoadAll<Sprite>(tileSet.name);
             var lookup = sprites.GroupBy(HashSprite).ToDictionary(e => e.Key, e => e.First());
-            
-            var wfc = JsonConvert.DeserializeObject<WfcUtils<string>>(serializedJson,new BitArrayConverter());
+
+            var wfc = WfcUtils<string>.BuildFromJson(serializedJson);
             var outputVec = new[] {outputSize.x, outputSize.y};
             if (JsonFile)
             {
@@ -129,8 +129,8 @@ namespace Script
             Console.WriteLine(obj);
 
             var outputVec = new[] {outputSize.x, outputSize.y};
-            var wfc = new WfcUtils<string>(2,3,sprites.Length,sizeInput,hashedSpriteInput,WfcUtils<string>.SelectPattern.PatternUniform,WfcUtils<string>.NextCell.MinEntropy,e=>{},BorderBehavior.Wrap,new System.Random(DateTime.Now.Millisecond),0,new Neibours2(),null);
-            serializedJson = JsonConvert.SerializeObject(wfc,new JsonConverter[] {new BitArrayConverter()}); 
+            var wfc = new WfcUtils<string>(2,3,sprites.Length,sizeInput,hashedSpriteInput,BorderBehavior.Wrap,new System.Random(DateTime.Now.Millisecond),0,new Neibours2(),null,WfcUtils<string>.NextCell.NextCellEnum.MinEntropy,WfcUtils<string>.SelectPattern.SelectPatternEnum.PatternUniform);
+            serializedJson = wfc.SerializeToJson();
             if (JsonFile)
             {
                 var json = JsonConvert.SerializeObject(wfc);

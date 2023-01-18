@@ -30,7 +30,7 @@ namespace WFC
 
             public V? Collapse(Element e, int? n = null)
             {
-                n ??= e.Coefficient.FindFirstIndex(true);
+                n ??= e.Popcnt <= 1 ? e.Coefficient.FindFirstIndex(true) : e.Coefficient.FindRandomIndex(e.Popcnt,Wfc.Random,true);
 
                 var p = this.Wfc.Patterns[n.Value];
                 if (!e.Collapse(n.Value, p.Value))
@@ -144,10 +144,7 @@ namespace WFC
                     return contradiction;
                 }
 
-                if (this.Wfc.OnPropagate is not null)
-                {
-                    this.Wfc.OnPropagate(this);
-                }
+                this.Wfc.OnPropagate?.Invoke(this);
 
                 return null;
             }
@@ -186,12 +183,14 @@ namespace WFC
                 {
                     var e = Wfc.NextCellFn(this);
 
+                    // Observe/Collapse local node
                     var observeError = Observe(e);
                     if (observeError is not null)
                     {
                         return observeError;
                     }
 
+                    // Propagate constrains to neighbours
                     var propagateError = Propagate(e);
                     if (propagateError is not null)
                     {

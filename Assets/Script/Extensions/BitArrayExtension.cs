@@ -51,5 +51,28 @@ namespace System.Collections
 
             return -1;
         }
+        /**
+         * Efficient random index with value
+         */
+        public static int FindRandomIndex(this BitArray bitArray, int count, Random random, bool value = true)
+        {
+            var lastVar = -1;
+            var index = random.Next(count);
+            for (var i = 0; i < bitArray.Count; i++)
+            {
+                if (bitArray[i] == value)
+                {
+                    lastVar = i;
+                    index--;
+                }
+
+                if (index < 0)
+                {
+                    break;
+                }
+            }
+
+            return lastVar;
+        }
     }
 }

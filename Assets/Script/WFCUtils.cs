@@ -7,12 +7,11 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using Newtonsoft.Json;
 using Script.Converters;
 using Script.GenericUtils;
-using Debug = UnityEngine.Debug;
+using UnityEngine;
 using Random = System.Random;
 using V = TypedArray<int>;
 
@@ -22,55 +21,79 @@ namespace WFC
 {
     public partial class WfcUtils<T>
     {
+        [JsonProperty]
         public int Dimension { get; private set; }
+        [JsonProperty]
         public int PatternSize { get; private set; }
+        [JsonProperty]
         public int BITSetSize { get; private set; }
 
         public int Vol => Convert.ToInt32(Math.Pow(PatternSize, Dimension));
 
         public V SizeInput;
-        
-        [JsonIgnore]
-        public readonly T[] Input;
+
+        [JsonIgnore] public readonly T[] Input;
 
         public List<Pattern> Patterns;
 
         [JsonConverter(typeof(BitArrayConverter))]
         public BitArray MaskUsed;
 
+        [JsonIgnore]
         public Random Random;
 
         public int Flags;
 
         public BorderBehavior BorderBehavior;
 
-        [JsonIgnore]
-        public Func<Wave, Element, int> PatternFn;
-        
-        [JsonIgnore]
-        public Func<Wave, Element> NextCellFn;
-        
-        [JsonIgnore]
-        public Action<Wave> OnPropagate;
+        public SelectPattern.SelectPatternEnum SelectPatternEnum;
+        public NextCell.NextCellEnum NextCellEnum;
+
+        [JsonIgnore] public Func<Wave, Element, int> PatternFn;
+
+        [JsonIgnore] public Func<Wave, Element> NextCellFn;
+
+        [JsonIgnore] public Action<Wave> OnPropagate;
 
         public readonly T EmptyState;
-        
-        public INeibours Neighbours;
-        public readonly int[] PatternSizeVec;
 
-        public WfcUtils(){}
-        public WfcUtils(int dimension, int patternSize, int bitSetSize, V sizeInput, T[] input, Func<Wave, Element, int> patternFn,
-            Func<Wave, Element> nextCellFn, Action<Wave> onPropagate, BorderBehavior borderBehavior, Random random,
-            int flags, INeibours neighbours, T emptyState)
+        public INeibours Neighbours;
+        
+        [JsonProperty]
+        public int[] PatternSizeVec { get; private set; }
+
+        public static WfcUtils<T> BuildFromJson(string json)
         {
+            var wfcUtils = JsonConvert.DeserializeObject<WfcUtils<T>>(json, new BitArrayConverter());
+            wfcUtils.NextCellFn ??= NextCell.GetNextCellFn(wfcUtils.NextCellEnum);
+            wfcUtils.PatternFn ??= SelectPattern.GetPatternFn(wfcUtils.SelectPatternEnum);
+            wfcUtils.Random = new Random();
+            wfcUtils.PatternSizeVec = Enumerable.Repeat(wfcUtils.PatternSize, wfcUtils.Dimension).ToArray();
+            return wfcUtils;
+        }
+
+        [JsonConstructor]
+        public WfcUtils()
+        {
+        }
+
+        public string SerializeToJson()
+        {
+            return JsonConvert.SerializeObject(this, new BitArrayConverter());
+        }
+
+        public WfcUtils(int dimension, int patternSize, int bitSetSize, V sizeInput, T[] input, BorderBehavior borderBehavior, Random random,
+            int flags, INeibours neighbours, T emptyState,NextCell.NextCellEnum nextCellEnum, SelectPattern.SelectPatternEnum selectPatternEnum)
+        {
+            PatternFn = SelectPattern.GetPatternFn(selectPatternEnum);
+            NextCellFn = NextCell.GetNextCellFn(nextCellEnum);
+            NextCellEnum = nextCellEnum;
+            SelectPatternEnum = selectPatternEnum;
             Dimension = dimension;
             PatternSize = patternSize;
             BITSetSize = bitSetSize;
             SizeInput = sizeInput;
             Input = input;
-            PatternFn = patternFn;
-            NextCellFn = nextCellFn;
-            OnPropagate = onPropagate;
             BorderBehavior = borderBehavior;
             Random = random;
             Flags = flags;
@@ -122,7 +145,7 @@ namespace WFC
             BITSetSize = lookupTable.Count;
             foreach (var kvPair in lookupTable)
             {
-                patternsDict[kvPair.Key] = new Pattern()
+                patternsDict[kvPair.Key] = new Pattern
                 {
                     Id = id,
                     Value = kvPair.Key,
@@ -155,6 +178,9 @@ namespace WFC
 
         public bool Collapse(V sizeOut, out T[] output, T[] preset = null)
         {
+            var pattern = Patterns ?? throw new NullReferenceException("Missing Pattern");
+            var nextCellFn = NextCellFn ?? throw new NullReferenceException("Missing NextCellFn");
+            var selectPattern = PatternFn ?? throw new NullReferenceException("Missing PatternFn");
             var w = new Wave(this, sizeOut, preset);
             var res = w.Collapse();
             output = null;
@@ -214,6 +240,20 @@ namespace WFC
         
         public static class NextCell
         {
+            public enum NextCellEnum
+            {
+                MinEntropy
+            }
+            public static Func<Wave, Element> GetNextCellFn(NextCellEnum w)
+            {
+                switch (w)
+                {
+                    case NextCellEnum.MinEntropy:
+                        return MinEntropy;
+                }
+
+                return null;
+            }
             public static Element MinEntropy(Wave w)
             {
                 var minValue = int.MaxValue;
@@ -237,6 +277,23 @@ namespace WFC
 
         public static class SelectPattern
         {
+            public enum SelectPatternEnum
+            {
+                PatternWeighted, PatternUniform
+            }
+
+            public static Func<Wave, Element, int> GetPatternFn(SelectPatternEnum w)
+            {
+                switch (w)
+                {
+                    case SelectPatternEnum.PatternUniform:
+                        return PatternUniform;
+                    case SelectPatternEnum.PatternWeighted:
+                        return PatternWeighted;
+                }
+
+                return null;
+            }
             public static int PatternWeighted(Wave w, Element e)
             {
                 var sum = 0f;
@@ -247,24 +304,24 @@ namespace WFC
                     {
                         continue;
                     }
-
+            
                     distributionList[i] = w.Wfc.Patterns[i].Frequency;
                     sum += w.Wfc.Patterns[i].Frequency;
                 }
-
+            
                 // Random Double in range (0,sum)
                 var r = w.Wfc.Random.NextDouble()*sum;
                 var accumulator = 0f;
                 for (int i = 0; i < distributionList.Length; i++)
                 {
                     accumulator += distributionList[i];
-
+            
                     if (accumulator >= r)
                     {
                         return i;
                     }
                 }
-
+            
                 // throw new InvalidOperationException($"Failed to select pattern for {string.Join(",", e.Pos.Value)}");
                 Debug.Log($"Failed to select pattern for {string.Join(",", e.Pos.Value)}");
                 return -1;
