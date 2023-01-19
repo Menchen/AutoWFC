@@ -16,17 +16,13 @@ using Random = System.Random;
 using V = TypedArray<int>;
 
 
-
 namespace WFC
 {
     public partial class WfcUtils<T>
     {
-        [JsonProperty]
-        public int Dimension { get; private set; }
-        [JsonProperty]
-        public int PatternSize { get; private set; }
-        [JsonProperty]
-        public int BITSetSize { get; private set; }
+        [JsonProperty] public int Dimension { get; private set; }
+        [JsonProperty] public int PatternSize { get; private set; }
+        [JsonProperty] public int BITSetSize { get; private set; }
 
         public int Vol => Convert.ToInt32(Math.Pow(PatternSize, Dimension));
 
@@ -39,8 +35,7 @@ namespace WFC
         [JsonConverter(typeof(BitArrayConverter))]
         public BitArray MaskUsed;
 
-        [JsonIgnore]
-        public Random Random;
+        [JsonIgnore] public Random Random;
 
         public int Flags;
 
@@ -58,9 +53,8 @@ namespace WFC
         public readonly T EmptyState;
 
         public INeibours Neighbours;
-        
-        [JsonProperty]
-        public int[] PatternSizeVec { get; private set; }
+
+        [JsonProperty] public int[] PatternSizeVec { get; private set; }
 
         public static WfcUtils<T> BuildFromJson(string json)
         {
@@ -82,8 +76,10 @@ namespace WFC
             return JsonConvert.SerializeObject(this, new BitArrayConverter());
         }
 
-        public WfcUtils(int dimension, int patternSize, int bitSetSize, V sizeInput, T[] input, BorderBehavior borderBehavior, Random random,
-            int flags, INeibours neighbours, T emptyState,NextCell.NextCellEnum nextCellEnum, SelectPattern.SelectPatternEnum selectPatternEnum)
+        public WfcUtils(int dimension, int patternSize, int bitSetSize, V sizeInput, T[] input,
+            BorderBehavior borderBehavior, Random random,
+            int flags, INeibours neighbours, T emptyState, NextCell.NextCellEnum nextCellEnum,
+            SelectPattern.SelectPatternEnum selectPatternEnum)
         {
             PatternFn = SelectPattern.GetPatternFn(selectPatternEnum);
             NextCellFn = NextCell.GetNextCellFn(nextCellEnum);
@@ -99,14 +95,14 @@ namespace WFC
             Flags = flags;
             Neighbours = neighbours;
             EmptyState = emptyState;
-            
-            
+
+
             PatternSizeVec = Enumerable.Repeat(PatternSize, Dimension).ToArray();
 
             Patterns = new List<Pattern>();
-            
+
             // Get pattern data from input 
-            var sizeInputLength = SizeInput.Value.Aggregate((a,b)=>a*b);
+            var sizeInputLength = SizeInput.Value.Aggregate((a, b) => a * b);
 
 
             var lookupTable = new Dictionary<T, HashSet<T>[]>();
@@ -119,12 +115,13 @@ namespace WFC
                 {
                     continue;
                 }
+
                 var listArray = lookupTable.GetValueOrDefault(centerValue) ??
                                 Enumerable.Range(0, Neighbours.Length).Select(_ => new HashSet<T>()).ToArray();
                 for (int j = 0; j < Neighbours.Length; j++)
                 {
                     var offset = index!.Zip(Neighbours.Neighbours[j], (a, b) => a + b).ToArray();
-                    if (ArrayUtils.InBounds(sizeInput,offset))
+                    if (ArrayUtils.InBounds(sizeInput, offset))
                     {
                         var pos = ArrayUtils.RavelIndex(SizeInput, offset)!.Value;
                         var value = Input[pos];
@@ -134,10 +131,9 @@ namespace WFC
                 }
 
                 lookupTable[centerValue] = listArray;
-
             }
 
-            
+
             // Populate Patterns Ids
             var id = 0;
             var patternsDict = new Dictionary<T, Pattern>();
@@ -149,31 +145,30 @@ namespace WFC
                 {
                     Id = id,
                     Value = kvPair.Key,
-                    Valid = Enumerable.Range(0,Neighbours.Length).Select(_=>new BitArray(BITSetSize)).ToArray(),
+                    Valid = Enumerable.Range(0, Neighbours.Length).Select(_ => new BitArray(BITSetSize)).ToArray(),
                 };
-                
-                MaskUsed.Set(id,true);
+
+                MaskUsed.Set(id, true);
                 id++;
             }
-            
+
             // Assign valid bits
             foreach (var kvPair in lookupTable)
             {
                 var myself = patternsDict[kvPair.Key];
-                
+
                 for (int i = 0; i < Neighbours.Length; i++)
                 {
                     foreach (var neibourValue in kvPair.Value[i])
                     {
                         var neiboursId = patternsDict[neibourValue].Id;
-                        myself.Valid[i].Set(neiboursId,true);
-                        
+                        myself.Valid[i].Set(neiboursId, true);
                     }
                 }
             }
 
 
-            Patterns = patternsDict.Select(e=>e.Value).ToList();
+            Patterns = patternsDict.Select(e => e.Value).ToList();
         }
 
         public bool Collapse(V sizeOut, out T[] output, T[] preset = null)
@@ -189,7 +184,7 @@ namespace WFC
                 return false;
             }
 
-            output = w.CurrentWave.Select(e=>e.Value).ToArray();
+            output = w.CurrentWave.Select(e => e.Value).ToArray();
             return true;
         }
 
@@ -204,7 +199,7 @@ namespace WFC
             if (BorderBehavior == BorderBehavior.Exclude)
             {
                 var southEast = northWest.Select(e => e + PatternSize - 1).ToArray();
-                if (!ArrayUtils.InBounds(SizeInput,northWest) || !ArrayUtils.InBounds(SizeInput,southEast))
+                if (!ArrayUtils.InBounds(SizeInput, northWest) || !ArrayUtils.InBounds(SizeInput, southEast))
                 {
                     return null;
                 }
@@ -214,36 +209,42 @@ namespace WFC
             for (int i = 0; i < Vol; i++)
             {
                 var offset = ArrayUtils.UnRavelIndex(PatternSizeVec, i);
-                var pos = northWest.Zip(offset, (a,b) => a + b).ToArray();
+                var pos = northWest.Zip(offset, (a, b) => a + b).ToArray();
                 switch (BorderBehavior)
                 {
                     case BorderBehavior.Exclude:
                         dst[i] = Input[ArrayUtils.RavelIndex(SizeInput, pos)!.Value];
                         break;
                     case BorderBehavior.Zero:
-                        if (!ArrayUtils.InBounds(SizeInput,pos))
+                        if (!ArrayUtils.InBounds(SizeInput, pos))
                         {
                             dst[i] = EmptyState;
                         }
+
                         break;
                     case BorderBehavior.Clamp:
-                        dst[i] = Input[ArrayUtils.RavelIndex(SizeInput, pos.Zip(SizeInput.Value,(v,s)=>Math.Clamp(v,0,s-1)).ToArray())!.Value];
+                        dst[i] = Input[
+                            ArrayUtils.RavelIndex(SizeInput,
+                                pos.Zip(SizeInput.Value, (v, s) => Math.Clamp(v, 0, s - 1)).ToArray())!.Value];
                         break;
                     case BorderBehavior.Wrap:
-                        dst[i] = Input[ArrayUtils.RavelIndex(SizeInput, pos.Zip(SizeInput.Value,(v,s)=>((v%s)+s)%s).ToArray())!.Value];
+                        dst[i] = Input[
+                            ArrayUtils.RavelIndex(SizeInput,
+                                pos.Zip(SizeInput.Value, (v, s) => ((v % s) + s) % s).ToArray())!.Value];
                         break;
                 }
             }
-            return dst;
 
+            return dst;
         }
-        
+
         public static class NextCell
         {
             public enum NextCellEnum
             {
                 MinEntropy
             }
+
             public static Func<Wave, Element> GetNextCellFn(NextCellEnum w)
             {
                 switch (w)
@@ -254,6 +255,7 @@ namespace WFC
 
                 return null;
             }
+
             public static Element MinEntropy(Wave w)
             {
                 var minValue = int.MaxValue;
@@ -271,6 +273,7 @@ namespace WFC
                 {
                     throw new InvalidOperationException("Failed to find Next Cell");
                 }
+
                 return minElement;
             }
         }
@@ -279,7 +282,8 @@ namespace WFC
         {
             public enum SelectPatternEnum
             {
-                PatternWeighted, PatternUniform
+                PatternWeighted,
+                PatternUniform
             }
 
             public static Func<Wave, Element, int> GetPatternFn(SelectPatternEnum w)
@@ -294,6 +298,7 @@ namespace WFC
 
                 return null;
             }
+
             public static int PatternWeighted(Wave w, Element e)
             {
                 var sum = 0f;
@@ -304,38 +309,36 @@ namespace WFC
                     {
                         continue;
                     }
-            
+
                     distributionList[i] = w.Wfc.Patterns[i].Frequency;
                     sum += w.Wfc.Patterns[i].Frequency;
                 }
-            
+
                 // Random Double in range (0,sum)
-                var r = w.Wfc.Random.NextDouble()*sum;
+                var r = w.Wfc.Random.NextDouble() * sum;
                 var accumulator = 0f;
                 for (int i = 0; i < distributionList.Length; i++)
                 {
                     accumulator += distributionList[i];
-            
+
                     if (accumulator >= r)
                     {
                         return i;
                     }
                 }
-            
+
                 // throw new InvalidOperationException($"Failed to select pattern for {string.Join(",", e.Pos.Value)}");
                 Debug.Log($"Failed to select pattern for {string.Join(",", e.Pos.Value)}");
                 return -1;
             }
-            
-            
-            
+
+
             public static int PatternUniform(Wave w, Element e)
             {
-
                 var random = w.Wfc.Random;
                 var avaliable = e.Coefficient.GetCardinality();
                 var r = random.Next(0, avaliable);
-                
+
 
                 var accumulator = 0;
                 for (int i = 0; i < e.Coefficient.Count; i++)
@@ -352,12 +355,11 @@ namespace WFC
 
                     accumulator++;
                 }
+
                 // throw new InvalidOperationException($"Failed to select pattern for {string.Join(",", e.Pos.Value)}");
                 Debug.Log($"Failed to select pattern for {string.Join(",", e.Pos.Value)}");
                 return -1;
             }
         }
-        
     }
-
 }

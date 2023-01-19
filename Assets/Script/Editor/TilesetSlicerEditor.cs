@@ -1,4 +1,5 @@
 using System;
+using Script.Extensions;
 using UnityEditor;
 using UnityEditor.EditorTools;
 using UnityEngine;
@@ -53,7 +54,7 @@ namespace Script
                     {
                         _selectState = SelectState.None;
                         _p2 = local;
-                        _targetTilesetSlicer.CurrentSelection = BoundsIntFrom2Points(_p1!.Value, _p2.Value);
+                        _targetTilesetSlicer.CurrentSelection = _p1!.Value.BoundsIntFrom2Points(_p2.Value);
                         Event.current.Use();
                         GUIUtility.hotControl = 0;
                     }
@@ -62,17 +63,6 @@ namespace Script
             
         }
 
-        public static BoundsInt BoundsIntFrom2Points(Vector3Int a, Vector3Int b)
-        {
-            var xMin = Math.Min(a.x, b.x);
-            var xMax = Math.Max(a.x, b.x);
-            var yMin = Math.Min(a.y, b.y);
-            var yMax = Math.Max(a.y, b.y);
-            var zMin = Math.Min(a.z, b.z);
-            var zMax = Math.Max(a.z, b.z);
-
-            return new BoundsInt(xMin, yMin, zMin, xMax - xMin+1, yMax - yMin+1, zMax - zMin+1);
-        }
         public void OnSceneGUI()
         {
             if (Event.current.type is EventType.Repaint)
@@ -92,14 +82,14 @@ namespace Script
                     }else if (_p2 is null)
                     {
                         // p1 selected and p2 missing
-                        GridEditorUtility.DrawGridMarquee(_tilemap,BoundsIntFrom2Points(_p1.Value,local),Color.cyan);
+                        GridEditorUtility.DrawGridMarquee(_tilemap, _p1.Value.BoundsIntFrom2Points(local),Color.cyan);
                     }
                 }
 
                 if (_p1 is not null && _p2 is not null)
                 {
                     // p1 & p2 selected
-                    GridEditorUtility.DrawGridMarquee(_tilemap,BoundsIntFrom2Points(_p1.Value,_p2.Value),Color.cyan);
+                    GridEditorUtility.DrawGridMarquee(_tilemap, _p1.Value.BoundsIntFrom2Points(_p2.Value),Color.cyan);
                 }
                 
             }else if (Event.current.type != EventType.Used)
@@ -145,10 +135,11 @@ namespace Script
             }
             if (GUILayout.Button("GenerateWithJson"))
             {
-                slicer.WfcWithJson();
+                slicer.WfcWithJson( _p1 is null || _p2 is null ? null :_p1.Value.BoundsIntFrom2Points(_p2.Value));
             }
 
             _selectActive = GUILayout.Toggle(_selectActive, "Select");
+            _editorMode = _selectActive? EditorMode.Select : EditorMode.None;
             if (_selectActive)
             {
                 // _selectActive = !_selectActive;

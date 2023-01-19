@@ -42,7 +42,7 @@ namespace Script
             [FormerlySerializedAs("SelectColor")] public Color selectColor = new Color(255/255f, 165/255f, 0f);
         }
 
-        public void WfcWithJson()
+        public void WfcWithJson(BoundsInt? bounds = null)
         {
             
             var sprites = Resources.LoadAll<Sprite>(tileSet.name);
@@ -50,6 +50,12 @@ namespace Script
 
             var wfc = WfcUtils<string>.BuildFromJson(serializedJson);
             var outputVec = new[] {outputSize.x, outputSize.y};
+            var offset = new Vector3Int();
+            if (bounds is not null)
+            {
+                outputVec = new[] { bounds.Value.size.x, bounds.Value.size.y };
+                offset = bounds.Value.position;
+            }
             if (JsonFile)
             {
                 var json = JsonConvert.SerializeObject(wfc);
@@ -71,8 +77,8 @@ namespace Script
                 
                 tile.sprite = output[i] is null ? null : lookup[output[i]];
                 var unityIndex = ToUnityIndex(pos[0], pos[1], outputVec[0], outputVec[1]);
-                tilemap.SetEditorPreviewTile(new Vector3Int(unityIndex.x, unityIndex.y), tile);
-                tilemap.SetTile(new Vector3Int(unityIndex.x, unityIndex.y), tile);
+                tilemap.SetEditorPreviewTile(offset+new Vector3Int(unityIndex.x, unityIndex.y), tile);
+                tilemap.SetTile(offset+new Vector3Int(unityIndex.x, unityIndex.y), tile);
             }
         }
 
