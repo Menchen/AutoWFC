@@ -135,7 +135,7 @@ namespace Script
             Console.WriteLine(obj);
 
             var outputVec = new[] {outputSize.x, outputSize.y};
-            var wfc = new WfcUtils<string>(2,3,sprites.Length,sizeInput,hashedSpriteInput,BorderBehavior.Wrap,new System.Random(DateTime.Now.Millisecond),0,new Neibours2(),null,WfcUtils<string>.NextCell.NextCellEnum.MinEntropy,WfcUtils<string>.SelectPattern.SelectPatternEnum.PatternUniform);
+            var wfc = new WfcUtils<string>(2,3,sprites.Length,sizeInput,hashedSpriteInput,BorderBehavior.Wrap,new System.Random(DateTime.Now.Millisecond),new Neibours2(),null,WfcUtils<string>.NextCell.NextCellEnum.MinEntropy,WfcUtils<string>.SelectPattern.SelectPatternEnum.PatternUniform);
             serializedJson = wfc.SerializeToJson();
             if (JsonFile)
             {

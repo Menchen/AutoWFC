@@ -21,11 +21,12 @@ namespace WFC
     public partial class WfcUtils<T>
     {
         [JsonProperty] public int Dimension { get; private set; }
-        [JsonProperty] public int PatternSize { get; private set; }
+        // [JsonProperty] public int PatternSize { get; private set; }
         [JsonProperty] public int BITSetSize { get; private set; }
 
-        public int Vol => Convert.ToInt32(Math.Pow(PatternSize, Dimension));
+        // public int Vol => Convert.ToInt32(Math.Pow(PatternSize, Dimension));
 
+        [JsonIgnore]
         public V SizeInput;
 
         [JsonIgnore] public readonly T[] Input;
@@ -33,12 +34,13 @@ namespace WFC
         public List<Pattern> Patterns;
 
         [JsonConverter(typeof(BitArrayConverter))]
-        public BitArray MaskUsed;
+        public BitArray MaskUsed; // Default Mask for enabled pattern
 
         [JsonIgnore] public Random Random;
 
-        public int Flags;
 
+        
+        [JsonIgnore]
         public BorderBehavior BorderBehavior;
 
         public SelectPattern.SelectPatternEnum SelectPatternEnum;
@@ -54,7 +56,7 @@ namespace WFC
 
         public INeibours Neighbours;
 
-        [JsonProperty] public int[] PatternSizeVec { get; private set; }
+        // [JsonProperty] public int[] PatternSizeVec { get; private set; }
 
         public static WfcUtils<T> BuildFromJson(string json)
         {
@@ -62,7 +64,7 @@ namespace WFC
             wfcUtils.NextCellFn ??= NextCell.GetNextCellFn(wfcUtils.NextCellEnum);
             wfcUtils.PatternFn ??= SelectPattern.GetPatternFn(wfcUtils.SelectPatternEnum);
             wfcUtils.Random = new Random();
-            wfcUtils.PatternSizeVec = Enumerable.Repeat(wfcUtils.PatternSize, wfcUtils.Dimension).ToArray();
+            // wfcUtils.PatternSizeVec = Enumerable.Repeat(wfcUtils.PatternSize, wfcUtils.Dimension).ToArray();
             return wfcUtils;
         }
 
@@ -78,7 +80,7 @@ namespace WFC
 
         public WfcUtils(int dimension, int patternSize, int bitSetSize, V sizeInput, T[] input,
             BorderBehavior borderBehavior, Random random,
-            int flags, INeibours neighbours, T emptyState, NextCell.NextCellEnum nextCellEnum,
+            INeibours neighbours, T emptyState, NextCell.NextCellEnum nextCellEnum,
             SelectPattern.SelectPatternEnum selectPatternEnum)
         {
             PatternFn = SelectPattern.GetPatternFn(selectPatternEnum);
@@ -86,18 +88,17 @@ namespace WFC
             NextCellEnum = nextCellEnum;
             SelectPatternEnum = selectPatternEnum;
             Dimension = dimension;
-            PatternSize = patternSize;
+            // PatternSize = patternSize;
             BITSetSize = bitSetSize;
             SizeInput = sizeInput;
             Input = input;
             BorderBehavior = borderBehavior;
             Random = random;
-            Flags = flags;
             Neighbours = neighbours;
             EmptyState = emptyState;
 
 
-            PatternSizeVec = Enumerable.Repeat(PatternSize, Dimension).ToArray();
+            // PatternSizeVec = Enumerable.Repeat(PatternSize, Dimension).ToArray();
 
             Patterns = new List<Pattern>();
 
@@ -192,51 +193,51 @@ namespace WFC
          * Create Array of T with size Vol, A.K.A PatternSize ** N 
          * With neighbours from Input based with BorderBehavior
          */
-        private T[] DataAt(V center)
-        {
-            var northWest = center.Value.Select(e => e - (PatternSize / 2)).ToArray();
-
-            if (BorderBehavior == BorderBehavior.Exclude)
-            {
-                var southEast = northWest.Select(e => e + PatternSize - 1).ToArray();
-                if (!ArrayUtils.InBounds(SizeInput, northWest) || !ArrayUtils.InBounds(SizeInput, southEast))
-                {
-                    return null;
-                }
-            }
-
-            var dst = new T[Vol];
-            for (int i = 0; i < Vol; i++)
-            {
-                var offset = ArrayUtils.UnRavelIndex(PatternSizeVec, i);
-                var pos = northWest.Zip(offset, (a, b) => a + b).ToArray();
-                switch (BorderBehavior)
-                {
-                    case BorderBehavior.Exclude:
-                        dst[i] = Input[ArrayUtils.RavelIndex(SizeInput, pos)!.Value];
-                        break;
-                    case BorderBehavior.Zero:
-                        if (!ArrayUtils.InBounds(SizeInput, pos))
-                        {
-                            dst[i] = EmptyState;
-                        }
-
-                        break;
-                    case BorderBehavior.Clamp:
-                        dst[i] = Input[
-                            ArrayUtils.RavelIndex(SizeInput,
-                                pos.Zip(SizeInput.Value, (v, s) => Math.Clamp(v, 0, s - 1)).ToArray())!.Value];
-                        break;
-                    case BorderBehavior.Wrap:
-                        dst[i] = Input[
-                            ArrayUtils.RavelIndex(SizeInput,
-                                pos.Zip(SizeInput.Value, (v, s) => ((v % s) + s) % s).ToArray())!.Value];
-                        break;
-                }
-            }
-
-            return dst;
-        }
+        // private T[] DataAt(V center)
+        // {
+        //     var northWest = center.Value.Select(e => e - (PatternSize / 2)).ToArray();
+        //
+        //     if (BorderBehavior == BorderBehavior.Exclude)
+        //     {
+        //         var southEast = northWest.Select(e => e + PatternSize - 1).ToArray();
+        //         if (!ArrayUtils.InBounds(SizeInput, northWest) || !ArrayUtils.InBounds(SizeInput, southEast))
+        //         {
+        //             return null;
+        //         }
+        //     }
+        //
+        //     var dst = new T[Vol];
+        //     for (int i = 0; i < Vol; i++)
+        //     {
+        //         var offset = ArrayUtils.UnRavelIndex(PatternSizeVec, i);
+        //         var pos = northWest.Zip(offset, (a, b) => a + b).ToArray();
+        //         switch (BorderBehavior)
+        //         {
+        //             case BorderBehavior.Exclude:
+        //                 dst[i] = Input[ArrayUtils.RavelIndex(SizeInput, pos)!.Value];
+        //                 break;
+        //             case BorderBehavior.Zero:
+        //                 if (!ArrayUtils.InBounds(SizeInput, pos))
+        //                 {
+        //                     dst[i] = EmptyState;
+        //                 }
+        //
+        //                 break;
+        //             case BorderBehavior.Clamp:
+        //                 dst[i] = Input[
+        //                     ArrayUtils.RavelIndex(SizeInput,
+        //                         pos.Zip(SizeInput.Value, (v, s) => Math.Clamp(v, 0, s - 1)).ToArray())!.Value];
+        //                 break;
+        //             case BorderBehavior.Wrap:
+        //                 dst[i] = Input[
+        //                     ArrayUtils.RavelIndex(SizeInput,
+        //                         pos.Zip(SizeInput.Value, (v, s) => ((v % s) + s) % s).ToArray())!.Value];
+        //                 break;
+        //         }
+        //     }
+        //
+        //     return dst;
+        // }
 
         public static class NextCell
         {
