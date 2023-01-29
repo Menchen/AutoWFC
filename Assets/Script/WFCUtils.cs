@@ -56,6 +56,9 @@ namespace WFC
 
         public INeibours Neighbours;
 
+        [JsonIgnore]
+        public Dictionary<T, int> PatternLookUp;
+
         // [JsonProperty] public int[] PatternSizeVec { get; private set; }
 
         public static WfcUtils<T> BuildFromJson(string json)
@@ -64,7 +67,7 @@ namespace WFC
             wfcUtils.NextCellFn ??= NextCell.GetNextCellFn(wfcUtils.NextCellEnum);
             wfcUtils.PatternFn ??= SelectPattern.GetPatternFn(wfcUtils.SelectPatternEnum);
             wfcUtils.Random = new Random();
-            // wfcUtils.PatternSizeVec = Enumerable.Repeat(wfcUtils.PatternSize, wfcUtils.Dimension).ToArray();
+            wfcUtils.PatternLookUp = wfcUtils.Patterns.ToDictionary(e => e.Value, e => e.Id);
             return wfcUtils;
         }
 
@@ -170,6 +173,7 @@ namespace WFC
 
 
             Patterns = patternsDict.Select(e => e.Value).ToList();
+            PatternLookUp = Patterns.ToDictionary(e => e.Value, e => e.Id);
         }
 
         public bool Collapse(V sizeOut, out T[] output, T[] preset = null)
@@ -243,21 +247,21 @@ namespace WFC
         {
             public enum NextCellEnum
             {
-                MinEntropy
+                MinState
             }
 
             public static Func<Wave, Element> GetNextCellFn(NextCellEnum w)
             {
                 switch (w)
                 {
-                    case NextCellEnum.MinEntropy:
-                        return MinEntropy;
+                    case NextCellEnum.MinState:
+                        return MinState;
                 }
 
                 return null;
             }
 
-            public static Element MinEntropy(Wave w)
+            public static Element MinState(Wave w)
             {
                 var minValue = int.MaxValue;
                 Element minElement = null;
@@ -272,7 +276,7 @@ namespace WFC
 
                 if (minElement is null)
                 {
-                    throw new InvalidOperationException("Failed to find Next Cell");
+                    throw new InvalidOperationException("Failed to find Next Cell/Converge");
                 }
 
                 return minElement;

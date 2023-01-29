@@ -1,6 +1,8 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Script.Extensions;
 using V = TypedArray<int>;
 namespace WFC
 {
@@ -23,6 +25,11 @@ namespace WFC
 
             public Wave(WfcUtils<T> wfc, V sizeWave, T[] preset)
             {
+                var sizeWaveLength = sizeWave.Value.Aggregate((acc,value) => acc*value);
+                if (preset is not null && sizeWaveLength != preset.Length)
+                {
+                    throw new ArgumentException($"SizeWave{sizeWaveLength} & preset{preset.Length} is not same length", nameof(preset));
+                }
                 Wfc = wfc;
                 SizeWave = sizeWave;
                 Preset = preset;
@@ -168,18 +175,24 @@ namespace WFC
                 // Load preset value if present
                 if (Preset is not null)
                 {
-                    for (int i = 0; i < Preset.Length; i++)
+                    var shuffledIndex = Enumerable.Range(0, Preset.Length).ToList();
+                    shuffledIndex.ShuffleInPlace();
+                    foreach (var i in shuffledIndex)
                     {
-                        if (Preset[i] is not null)
+                        if (Equals(Preset[i], Wfc.EmptyState) || Preset[i] is null || CurrentWave[i].Collapsed) continue;
+                        if (Preset[i] is null) { continue; }
+
+                        var err = Collapse(CurrentWave[i], Wfc.PatternLookUp[Preset[i]]);
+                        if (err is null)
                         {
-                            CurrentWave[i].Value = Preset[i];
-                            NumCollapsed++;
-                            // TODO Propagate super pattern
+                            Propagate(CurrentWave[i]);
                         }
+
                     }
+
                 }
 
-                while (NumCollapsed != this.CurrentWave.Length)
+                while (NumCollapsed < this.CurrentWave.Length)
                 {
                     var e = Wfc.NextCellFn(this);
 

@@ -49,9 +49,35 @@ namespace Script
             var outputVec = new[] { bounds.size.x, bounds.size.y };
             var offset = bounds.position;
             
-            var colaped = wfc.Collapse(outputVec,out var output);
-
+            
+            
             var tilemap = GetComponent<Tilemap>();
+            var outputLength = outputVec.Aggregate((acc, e) => acc * e);
+            var preset = new string[outputLength];
+            for (int i = 0; i < outputLength; i++)
+            {
+                var pos = ArrayUtils.UnRavelIndex(outputVec, i);
+                var unityIndex = ToUnityIndex(pos[0], pos[1], outputVec[0], outputVec[1]);
+
+                try
+                {
+                    var tile = tilemap.GetTile<Tile>(offset+new Vector3Int(unityIndex.x, unityIndex.y));
+                    if (tile == null)
+                    {
+                        // Empty
+                        continue;
+                    }
+                    preset[i] = HashSprite(tile.sprite);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"Failed to get Tile from {offset+new Vector3Int(unityIndex.x, unityIndex.y)}, SKIPPED!\n{e}\n{e.StackTrace}");
+                }
+                
+            }
+            
+            var colaped = wfc.Collapse(outputVec,out var output,preset);
+
             // tilemap.ClearAllTiles();
             tilemap.ClearAllEditorPreviewTiles();
 
@@ -64,8 +90,8 @@ namespace Script
                 var unityIndex = ToUnityIndex(pos[0], pos[1], outputVec[0], outputVec[1]);
                 tilemap.SetEditorPreviewTile(offset+new Vector3Int(unityIndex.x, unityIndex.y), tile);
                 tilemap.SetTile(offset+new Vector3Int(unityIndex.x, unityIndex.y), tile);
-                EditorUtility.SetDirty(tilemap);
             }
+            EditorUtility.SetDirty(tilemap);
         }
 
         public void WfcThis()
@@ -82,7 +108,7 @@ namespace Script
 
             var hashedSpriteInput = sprites.Select(HashSprite).ToArray();
 
-            var wfc = new WfcUtils<string>(2,3,sprites.Length,sizeInput,hashedSpriteInput,BorderBehavior.Wrap,new System.Random(DateTime.Now.Millisecond),new Neibours2(),null,WfcUtils<string>.NextCell.NextCellEnum.MinEntropy,WfcUtils<string>.SelectPattern.SelectPatternEnum.PatternUniform);
+            var wfc = new WfcUtils<string>(2,3,sprites.Length,sizeInput,hashedSpriteInput,BorderBehavior.Wrap,new System.Random(DateTime.Now.Millisecond),new Neibours2(),null,WfcUtils<string>.NextCell.NextCellEnum.MinState,WfcUtils<string>.SelectPattern.SelectPatternEnum.PatternUniform);
             serializedJson = wfc.SerializeToJson();
             
             
