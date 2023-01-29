@@ -191,7 +191,6 @@ namespace Script
             if (posibility.Count <= 0)
             {
                 throw new InvalidOperationException("Restart");
-                return null;
             }
 
             var index = new Random(DateTime.Now.GetHashCode()).Next(posibility.Count);

@@ -129,13 +129,18 @@ namespace Script
             TilesetSlicer slicer = (TilesetSlicer) target;
             // GridEditorUtility.
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Generate"))
+            if (GUILayout.Button("TrainFromTileSet"))
             {
                 slicer.WfcThis();
             }
-            if (GUILayout.Button("GenerateWithJson"))
+
+            var oldEnabled = GUI.enabled;
+            GUI.enabled = !string.IsNullOrEmpty(slicer.serializedJson) && _p1 is not null && _p2 is not null;
+            var clickedGenerateRegion = GUILayout.Button("GenerateWithJson");
+            GUI.enabled = oldEnabled;
+            if (clickedGenerateRegion)
             {
-                slicer.WfcWithJson( _p1 is null || _p2 is null ? null :_p1.Value.BoundsIntFrom2Points(_p2.Value));
+                slicer.WfcWithJson( _p1!.Value.BoundsIntFrom2Points(_p2!.Value));
             }
 
             _selectActive = GUILayout.Toggle(_selectActive, "Select");

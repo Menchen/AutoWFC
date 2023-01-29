@@ -32,8 +32,6 @@ namespace Script
         [TextArea(15,20)]
         public string serializedJson;
 
-        public TextAsset JsonFile;
-        
         [Serializable]
         private class Style
         {
@@ -42,32 +40,19 @@ namespace Script
             [FormerlySerializedAs("SelectColor")] public Color selectColor = new Color(255/255f, 165/255f, 0f);
         }
 
-        public void WfcWithJson(BoundsInt? bounds = null)
+        public void WfcWithJson(BoundsInt bounds)
         {
-            
             var sprites = Resources.LoadAll<Sprite>(tileSet.name);
             var lookup = sprites.GroupBy(HashSprite).ToDictionary(e => e.Key, e => e.First());
 
             var wfc = WfcUtils<string>.BuildFromJson(serializedJson);
-            var outputVec = new[] {outputSize.x, outputSize.y};
-            var offset = new Vector3Int();
-            if (bounds is not null)
-            {
-                outputVec = new[] { bounds.Value.size.x, bounds.Value.size.y };
-                offset = bounds.Value.position;
-            }
-            if (JsonFile)
-            {
-                var json = JsonConvert.SerializeObject(wfc);
-                File.WriteAllText(AssetDatabase.GetAssetPath(JsonFile), json);
-                // TODO Move to Editor
-                EditorUtility.SetDirty(JsonFile);
-                
-            }
+            var outputVec = new[] { bounds.size.x, bounds.size.y };
+            var offset = bounds.position;
+            
             var colaped = wfc.Collapse(outputVec,out var output);
 
             var tilemap = GetComponent<Tilemap>();
-            tilemap.ClearAllTiles();
+            // tilemap.ClearAllTiles();
             tilemap.ClearAllEditorPreviewTiles();
 
             for (int i = 0; i < output.Length; i++)
@@ -79,88 +64,28 @@ namespace Script
                 var unityIndex = ToUnityIndex(pos[0], pos[1], outputVec[0], outputVec[1]);
                 tilemap.SetEditorPreviewTile(offset+new Vector3Int(unityIndex.x, unityIndex.y), tile);
                 tilemap.SetTile(offset+new Vector3Int(unityIndex.x, unityIndex.y), tile);
+                EditorUtility.SetDirty(tilemap);
             }
         }
 
         public void WfcThis()
         {
-            if (tileSet is null || outputSize == Vector2Int.zero)
-            {
-                return;
-            }
-            
             tileSet.filterMode = FilterMode.Point;
             
             var sprites = Resources.LoadAll<Sprite>(tileSet.name);
             var pixelPerUnit = sprites[0].pixelsPerUnit;
             
-            
             int maxY = Mathf.FloorToInt(tileSet.height / pixelPerUnit);
             int maxX = Mathf.FloorToInt(tileSet.width / pixelPerUnit);
-            
-            var lookup = sprites.GroupBy(HashSprite).ToDictionary(e => e.Key, e => e.First());
-            var hashedSpriteInput = new string[sprites.Length];
-            // var hashedSpriteInput = sprites.Select(HashSprite).ToArray();
-            
+
             var sizeInput = new[] {maxX, sprites.Length/maxX};
-            int x = 0;
-            int y = maxY-1;
 
-            hashedSpriteInput = sprites.Select(HashSprite).ToArray();
-            // string t = null;
-            // foreach (var sprite in sprites)
-            // {
-            //     var index = ArrayUtils.RavelIndex(sizeInput, new[] {x, y}).Value;
-            //     hashedSpriteInput[index] = HashSprite(sprite);
-            //     if (x==9 && y == 19)
-            //     {
-            //         t = HashSprite(sprite);
-            //     }
-            //     
-            //     x++;
-            //     if (x >= MaxX)
-            //     {
-            //         x = 0;
-            //         y--;
-            //     }
-            // }
-            var preset = new string[sprites.Length];
-            // preset[sprites.Length / 2] = t;
-            var ba = new BitArray(32,false);
+            var hashedSpriteInput = sprites.Select(HashSprite).ToArray();
 
-//var q = (bool[]) ba;
-            var jsonx = JsonConvert.SerializeObject(ba, new BitArrayConverter());
-            Console.WriteLine(jsonx);
-            var obj = JsonConvert.DeserializeObject<BitArray>(jsonx,new BitArrayConverter());
-            Console.WriteLine(obj);
-
-            var outputVec = new[] {outputSize.x, outputSize.y};
             var wfc = new WfcUtils<string>(2,3,sprites.Length,sizeInput,hashedSpriteInput,BorderBehavior.Wrap,new System.Random(DateTime.Now.Millisecond),new Neibours2(),null,WfcUtils<string>.NextCell.NextCellEnum.MinEntropy,WfcUtils<string>.SelectPattern.SelectPatternEnum.PatternUniform);
             serializedJson = wfc.SerializeToJson();
-            if (JsonFile)
-            {
-                var json = JsonConvert.SerializeObject(wfc);
-                File.WriteAllText(AssetDatabase.GetAssetPath(JsonFile), json);
-                // TODO Move to Editor
-                EditorUtility.SetDirty(JsonFile);
-                
-            }
-            var colaped = wfc.Collapse(outputVec,out var output);
-
-            var tilemap = GetComponent<Tilemap>();
-            tilemap.ClearAllTiles();
-            tilemap.ClearAllEditorPreviewTiles();
-
-            for (int i = 0; i < output.Length; i++)
-            {
-                var pos = ArrayUtils.UnRavelIndex(outputVec, i);
-                var tile = ScriptableObject.CreateInstance<Tile>();
-                
-                tile.sprite = output[i] is null ? null : lookup[output[i]];
-                var unityIndex = ToUnityIndex(pos[0], pos[1], outputVec[0], outputVec[1]);
-                tilemap.SetEditorPreviewTile(new Vector3Int(unityIndex.x, unityIndex.y), tile);
-                tilemap.SetTile(new Vector3Int(unityIndex.x, unityIndex.y), tile);
-            }
+            
+            
         }
 
         private Vector2Int ToUnityIndex(int x, int y, int w, int h)
