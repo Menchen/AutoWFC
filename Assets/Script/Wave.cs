@@ -4,11 +4,11 @@ using System.Collections.Generic;
 using System.Linq;
 using Script.Extensions;
 using V = TypedArray<int>;
+
 namespace WFC
 {
     public partial class WfcUtils<T>
     {
-        
         public class Wave
         {
             public readonly WfcUtils<T> Wfc;
@@ -25,11 +25,13 @@ namespace WFC
 
             public Wave(WfcUtils<T> wfc, V sizeWave, T[] preset)
             {
-                var sizeWaveLength = sizeWave.Value.Aggregate((acc,value) => acc*value);
+                var sizeWaveLength = sizeWave.Value.Aggregate((acc, value) => acc * value);
                 if (preset is not null && sizeWaveLength != preset.Length)
                 {
-                    throw new ArgumentException($"SizeWave{sizeWaveLength} & preset{preset.Length} is not same length", nameof(preset));
+                    throw new ArgumentException($"SizeWave{sizeWaveLength} & preset{preset.Length} is not same length",
+                        nameof(preset));
                 }
+
                 Wfc = wfc;
                 SizeWave = sizeWave;
                 Preset = preset;
@@ -37,7 +39,9 @@ namespace WFC
 
             public V? Collapse(Element e, int? n = null)
             {
-                n ??= e.Popcnt <= 1 ? e.Coefficient.FindFirstIndex(true) : e.Coefficient.FindRandomIndex(e.Popcnt,Wfc.Random,true);
+                n ??= e.Popcnt <= 1
+                    ? e.Coefficient.FindFirstIndex(true)
+                    : e.Coefficient.FindRandomIndex(e.Popcnt, Wfc.Random, true);
 
                 var p = this.Wfc.Patterns[n.Value];
                 if (!e.Collapse(n.Value, p.Value))
@@ -56,6 +60,7 @@ namespace WFC
                 {
                     return e.Pos;
                 }
+
                 return this.Collapse(e, n);
             }
 
@@ -77,10 +82,13 @@ namespace WFC
                         neighbors[i] = null;
 
                         var offset = Wfc.Neighbours.Neighbours[i].Zip(e.Pos.Value, (a, b) => a + b).ToArray();
-                        var outputIndex = ArrayUtils.InBounds(SizeWave,offset) ? ArrayUtils.RavelIndex(SizeWave, offset) : null;
+                        var outputIndex = ArrayUtils.InBounds(SizeWave, offset)
+                            ? ArrayUtils.RavelIndex(SizeWave, offset)
+                            : null;
                         if (outputIndex is not null)
                         {
-                            var neighbourElement = CurrentWave[outputIndex.Value];;
+                            var neighbourElement = CurrentWave[outputIndex.Value];
+                            ;
                             if (neighbourElement.Collapsed)
                             {
                                 continue;
@@ -169,27 +177,33 @@ namespace WFC
                     {
                         Pos = ArrayUtils.UnRavelIndex(SizeWave, i)
                     };
-                    CurrentWave[i].Initialize(this,Wfc.MaskUsed);
+                    CurrentWave[i].Initialize(this, Wfc.MaskUsed);
                 }
 
                 // Load preset value if present
                 if (Preset is not null)
                 {
+                    // Use shuffled index to introduce randomness
                     var shuffledIndex = Enumerable.Range(0, Preset.Length).ToList();
-                    shuffledIndex.ShuffleInPlace();
+                    shuffledIndex.ShuffleInPlace(Wfc.Random);
+
                     foreach (var i in shuffledIndex)
                     {
-                        if (Equals(Preset[i], Wfc.EmptyState) || Preset[i] is null || CurrentWave[i].Collapsed) continue;
-                        if (Preset[i] is null) { continue; }
+                        if (Equals(Preset[i], Wfc.EmptyState) || Preset[i] is null || CurrentWave[i].Collapsed)
+                            continue;
 
-                        var err = Collapse(CurrentWave[i], Wfc.PatternLookUp[Preset[i]]);
+                        var patternId = Wfc.PatternLookUp[Preset[i]];
+
+                        // Checking if patternId is still valid for current element because it can be invalidated by neighbours propagation
+                        var observedValue = CurrentWave[i].Coefficient[patternId]
+                            ? patternId
+                            : Wfc.PatternFn(this, CurrentWave[i]);
+                        var err = Collapse(CurrentWave[i], observedValue);
                         if (err is null)
                         {
                             Propagate(CurrentWave[i]);
                         }
-
                     }
-
                 }
 
                 while (NumCollapsed < this.CurrentWave.Length)
@@ -213,7 +227,6 @@ namespace WFC
 
                 return null;
             }
-
         }
     }
 }

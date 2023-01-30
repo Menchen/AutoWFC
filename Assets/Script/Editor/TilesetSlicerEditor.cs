@@ -137,10 +137,25 @@ namespace Script
             var oldEnabled = GUI.enabled;
             GUI.enabled = !string.IsNullOrEmpty(slicer.serializedJson) && _p1 is not null && _p2 is not null;
             var clickedGenerateRegion = GUILayout.Button("GenerateWithJson");
+            var clickSetToEmpty = GUILayout.Button("SetToEmpty");
             GUI.enabled = oldEnabled;
             if (clickedGenerateRegion)
             {
                 slicer.WfcWithJson( _p1!.Value.BoundsIntFrom2Points(_p2!.Value));
+            }
+
+            if (clickSetToEmpty)
+            {
+                var tilemap = slicer.GetComponent<Tilemap>();
+                tilemap.BoxFill(slicer.CurrentSelection.Value.position,null,0,0,slicer.CurrentSelection.Value.size.x,slicer.CurrentSelection.Value.size.y);
+                for (int x = 0; x < slicer.CurrentSelection.Value.size.x; x++)
+                {
+                    for (int y = 0; y < slicer.CurrentSelection.Value.size.y; y++)
+                    {
+                        tilemap.SetTile(slicer.CurrentSelection.Value.position+new Vector3Int(x,y,0),null);
+                        
+                    }
+                }
             }
 
             _selectActive = GUILayout.Toggle(_selectActive, "Select");

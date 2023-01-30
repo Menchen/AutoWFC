@@ -88,7 +88,9 @@ namespace Script
                 
                 tile.sprite = output[i] is null ? null : lookup[output[i]];
                 var unityIndex = ToUnityIndex(pos[0], pos[1], outputVec[0], outputVec[1]);
-                tilemap.SetEditorPreviewTile(offset+new Vector3Int(unityIndex.x, unityIndex.y), tile);
+                // tilemap.SetEditorPreviewTile(offset+new Vector3Int(unityIndex.x, unityIndex.y), tile);
+                
+                // Use SetTiles ? Seems more efficient.
                 tilemap.SetTile(offset+new Vector3Int(unityIndex.x, unityIndex.y), tile);
             }
             EditorUtility.SetDirty(tilemap);
@@ -108,7 +110,7 @@ namespace Script
 
             var hashedSpriteInput = sprites.Select(HashSprite).ToArray();
 
-            var wfc = new WfcUtils<string>(2,3,sprites.Length,sizeInput,hashedSpriteInput,BorderBehavior.Wrap,new System.Random(DateTime.Now.Millisecond),new Neibours2(),null,WfcUtils<string>.NextCell.NextCellEnum.MinState,WfcUtils<string>.SelectPattern.SelectPatternEnum.PatternUniform);
+            var wfc = new WfcUtils<string>(2,sprites.Length,sizeInput,hashedSpriteInput,BorderBehavior.Wrap,new System.Random(DateTime.Now.Millisecond),new Neibours2(),null,WfcUtils<string>.NextCell.NextCellEnum.MinState,WfcUtils<string>.SelectPattern.SelectPatternEnum.PatternUniform);
             serializedJson = wfc.SerializeToJson();
             
             
