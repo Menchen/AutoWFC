@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 
 // ReSharper disable once CheckNamespace
 namespace System.Collections
@@ -73,6 +74,25 @@ namespace System.Collections
             }
 
             return lastVar;
+        }
+
+        public static IEnumerable<bool> Iterate(this BitArray bitArray)
+        {
+            var enumerator = bitArray.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                yield return (bool)enumerator.Current!;
+            }
+        }
+        public static IEnumerable<(bool,int)> IterateWithIndex(this BitArray bitArray)
+        {
+            var enumerator = bitArray.GetEnumerator();
+            var i = 0;
+            while (enumerator.MoveNext())
+            {
+                yield return ((bool)enumerator.Current!,i);
+                i++;
+            }
         }
     }
 }
