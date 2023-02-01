@@ -5,6 +5,7 @@ using UnityEditor.EditorTools;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 using UnityEngine.UIElements;
+using WFC;
 
 namespace Script
 {
@@ -129,16 +130,38 @@ namespace Script
             TilesetSlicer slicer = (TilesetSlicer) target;
             // GridEditorUtility.
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("TrainFromTileSet"))
+            if (GUILayout.Button("Create new pattern From tileset"))
             {
-                slicer.WfcThis();
+                slicer.CreateWfcFromTileSet();
             }
-
             var oldEnabled = GUI.enabled;
+            GUI.enabled = _p1 is not null && _p2 is not null;
+            if (GUILayout.Button("Create new pattern from selection"))
+            {
+                slicer.CreateFromSelection(slicer.CurrentSelection.Value);
+            }
+            GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
+
             GUI.enabled = !string.IsNullOrEmpty(slicer.serializedJson) && _p1 is not null && _p2 is not null;
             var clickedGenerateRegion = GUILayout.Button("GenerateWithJson");
             var clickSetToEmpty = GUILayout.Button("SetToEmpty");
+            GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
+            var clickTrainFromSelection = GUILayout.Button("TrainFromSelection");
+            GUI.enabled = GUI.enabled && slicer.CurrentSelection?.size.sqrMagnitude == 6; // 2x1 Selection
+            var clickUnlearnFromSelection = GUILayout.Button("UnLearnFromSelection");
             GUI.enabled = oldEnabled;
+            if (clickTrainFromSelection)
+            {
+                slicer.LearnPatternFromRegion(slicer.CurrentSelection.Value);
+            }
+
+            if (clickUnlearnFromSelection)
+            {
+                slicer.UnLearnPatternFromRegion(slicer.CurrentSelection.Value);
+            }
+            
             if (clickedGenerateRegion)
             {
                 slicer.WfcWithJson( _p1!.Value.BoundsIntFrom2Points(_p2!.Value));

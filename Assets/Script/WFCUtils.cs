@@ -11,6 +11,7 @@ using System.Linq;
 using Newtonsoft.Json;
 using Script.Converters;
 using Script.GenericUtils;
+using Unity.VisualScripting.Dependencies.NCalc;
 using UnityEngine;
 using Random = System.Random;
 using V = TypedArray<int>;
@@ -21,6 +22,7 @@ namespace WFC
     public partial class WfcUtils<T>
     {
         [JsonProperty] public int Dimension { get; private set; }
+
         // [JsonProperty] public int PatternSize { get; private set; }
         [JsonProperty] public int BITSetSize { get; private set; }
 
@@ -34,9 +36,7 @@ namespace WFC
         [JsonIgnore] public Random Random;
 
 
-        
-        [JsonIgnore]
-        public BorderBehavior BorderBehavior;
+        [JsonIgnore] public BorderBehavior BorderBehavior;
 
         public SelectPattern.SelectPatternEnum SelectPatternEnum;
         public NextCell.NextCellEnum NextCellEnum;
@@ -51,8 +51,7 @@ namespace WFC
 
         public INeibours Neighbours;
 
-        [JsonIgnore]
-        public Dictionary<T, int> PatternLookUp;
+        [JsonIgnore] public Dictionary<T, int> PatternLookUp;
 
         // [JsonProperty] public int[] PatternSizeVec { get; private set; }
 
@@ -76,7 +75,7 @@ namespace WFC
             return JsonConvert.SerializeObject(this, new BitArrayConverter());
         }
 
-        public WfcUtils(int dimension, int bitSetSize, V sizeInput, T[] input,
+        public WfcUtils(int dimension, V sizeInput, T[] input,
             BorderBehavior borderBehavior, Random random,
             INeibours neighbours, T emptyState, NextCell.NextCellEnum nextCellEnum,
             SelectPattern.SelectPatternEnum selectPatternEnum)
@@ -87,16 +86,11 @@ namespace WFC
             SelectPatternEnum = selectPatternEnum;
             Dimension = dimension;
             // PatternSize = patternSize;
-            BITSetSize = bitSetSize;
             BorderBehavior = borderBehavior;
             Random = random;
             Neighbours = neighbours;
             EmptyState = emptyState;
 
-
-
-            Patterns = new List<Pattern>();
-
             // Get pattern data from input 
             var sizeInputLength = sizeInput.Value.Aggregate((a, b) => a * b);
 
@@ -128,56 +122,22 @@ namespace WFC
 
                 lookupTable[centerValue] = listArray;
             }
-
-
-            // Populate Patterns Ids
-            var id = 0;
-            var patternsDict = new Dictionary<T, Pattern>();
-            MaskUsed = new BitArray(lookupTable.Count);
-            BITSetSize = lookupTable.Count;
-            foreach (var kvPair in lookupTable)
-            {
-                patternsDict[kvPair.Key] = new Pattern
-                {
-                    Id = id,
-                    Value = kvPair.Key,
-                    Valid = Enumerable.Range(0, Neighbours.Length).Select(_ => new BitArray(BITSetSize)).ToArray(),
-                };
-
-                MaskUsed.Set(id, true);
-                id++;
-            }
-
-            // Assign valid bits
-            foreach (var kvPair in lookupTable)
-            {
-                var myself = patternsDict[kvPair.Key];
-
-                for (int i = 0; i < Neighbours.Length; i++)
-                {
-                    foreach (var neibourValue in kvPair.Value[i])
-                    {
-                        var neiboursId = patternsDict[neibourValue].Id;
-                        myself.Valid[i].Set(neiboursId, true);
-                    }
-                }
-            }
-
-
-            Patterns = patternsDict.Select(e => e.Value).ToList();
-            PatternLookUp = Patterns.ToDictionary(e => e.Value, e => e.Id);
+            
+            GeneratePatternFromLookUpTable(lookupTable);
         }
 
-        public void AddNewPattern(V sizeInput, T[] input)
+        public void LearnNewPattern(V sizeInput, T[] input)
         {
-            
-            Patterns = new List<Pattern>();
-
             // Get pattern data from input 
             var sizeInputLength = sizeInput.Value.Aggregate((a, b) => a * b);
 
-
-            var lookupTable = new Dictionary<T, HashSet<T>[]>();
+            // Dictionary of Valid neighbours in each direction/neibours with HashSet as we don't have Id yet.
+            // var lookupTable = new Dictionary<T, HashSet<T>[]>();
+            var lookupTable = Patterns.ToDictionary(e => e.Value, e => e.Valid.Select(b =>
+            {
+                return b.IterateWithIndex().Where(tuple => tuple.Item1).Select(tuple => Patterns[tuple.Item2].Value)
+                    .ToHashSet();
+            }).ToArray());
 
             for (int i = 0; i < sizeInputLength; i++)
             {
@@ -204,8 +164,57 @@ namespace WFC
 
                 lookupTable[centerValue] = listArray;
             }
+            GeneratePatternFromLookUpTable(lookupTable);
+        }
+        
+        public void UnLearnPattern(V sizeInput, T[] input)
+        {
+            // Get pattern data from input 
+            var sizeInputLength = sizeInput.Value.Aggregate((a, b) => a * b);
 
+            // Dictionary of Valid neighbours in each direction/neibours with HashSet as we don't have Id yet.
+            // var lookupTable = new Dictionary<T, HashSet<T>[]>();
+            var lookupTable = Patterns.ToDictionary(e => e.Value, e => e.Valid.Select(b =>
+            {
+                return b.IterateWithIndex().Where(tuple => tuple.Item1).Select(tuple => Patterns[tuple.Item2].Value)
+                    .ToHashSet();
+            }).ToArray());
 
+            for (int i = 0; i < sizeInputLength; i++)
+            {
+                var index = ArrayUtils.UnRavelIndex(sizeInput, i);
+                var centerValue = input[i];
+                if (centerValue is null)
+                {
+                    continue;
+                }
+
+                var listArray = lookupTable.GetValueOrDefault(centerValue);
+                if (listArray is null)
+                {
+                    continue;
+                }
+                for (int j = 0; j < Neighbours.Length; j++)
+                {
+                    var offset = index!.Zip(Neighbours.Neighbours[j], (a, b) => a + b).ToArray();
+                    if (ArrayUtils.InBounds(sizeInput, offset))
+                    {
+                        var pos = ArrayUtils.RavelIndex(sizeInput, offset)!.Value;
+                        var value = input[pos];
+
+                        listArray[j].Remove(value);
+                    }
+                }
+
+                lookupTable[centerValue] = listArray;
+            }
+
+            GeneratePatternFromLookUpTable(lookupTable);
+
+        }
+
+        private void GeneratePatternFromLookUpTable(Dictionary<T,HashSet<T>[]>  lookupTable)
+        {
             // Populate Patterns Ids
             var id = 0;
             var patternsDict = new Dictionary<T, Pattern>();
@@ -231,10 +240,10 @@ namespace WFC
 
                 for (int i = 0; i < Neighbours.Length; i++)
                 {
-                    foreach (var neibourValue in kvPair.Value[i])
+                    foreach (var neighbourValue in kvPair.Value[i])
                     {
-                        var neiboursId = patternsDict[neibourValue].Id;
-                        myself.Valid[i].Set(neiboursId, true);
+                        var neighboursId = patternsDict[neighbourValue].Id;
+                        myself.Valid[i].Set(neighboursId, true);
                     }
                 }
             }
@@ -310,7 +319,6 @@ namespace WFC
         //
         //     return dst;
         // }
-
         public static class NextCell
         {
             public enum NextCellEnum

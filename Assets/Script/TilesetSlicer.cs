@@ -52,31 +52,8 @@ namespace Script
             
             
             var tilemap = GetComponent<Tilemap>();
-            var outputLength = outputVec.Aggregate((acc, e) => acc * e);
-            var preset = new string[outputLength];
-            for (int i = 0; i < outputLength; i++)
-            {
-                var pos = ArrayUtils.UnRavelIndex(outputVec, i);
-                var unityIndex = ToUnityIndex(pos[0], pos[1], outputVec[0], outputVec[1]);
-
-                try
-                {
-                    var tile = tilemap.GetTile<Tile>(offset+new Vector3Int(unityIndex.x, unityIndex.y));
-                    if (tile == null)
-                    {
-                        // Empty
-                        continue;
-                    }
-                    preset[i] = HashSprite(tile.sprite);
-                }
-                catch (Exception e)
-                {
-                    Debug.LogError($"Failed to get Tile from {offset+new Vector3Int(unityIndex.x, unityIndex.y)}, SKIPPED!\n{e}\n{e.StackTrace}");
-                }
-                
-            }
-            
-            var colaped = wfc.Collapse(outputVec,out var output,preset);
+            var inputTiles = GetTilesFromTilemap(bounds, tilemap, out var inputVec);
+            var colaped = wfc.Collapse(outputVec,out var output,inputTiles);
 
             // tilemap.ClearAllTiles();
             tilemap.ClearAllEditorPreviewTiles();
@@ -96,7 +73,60 @@ namespace Script
             EditorUtility.SetDirty(tilemap);
         }
 
-        public void WfcThis()
+        public void LearnPatternFromRegion(BoundsInt bounds)
+        {
+            
+            var tilemap = GetComponent<Tilemap>();
+            var inputTiles = GetTilesFromTilemap(bounds, tilemap, out var inputVec);
+
+            var wfc = WfcUtils<string>.BuildFromJson(serializedJson);
+            wfc.LearnNewPattern(inputVec,inputTiles);
+            serializedJson = wfc.SerializeToJson();
+        }
+        
+        public void UnLearnPatternFromRegion(BoundsInt bounds)
+        {
+            var tilemap = GetComponent<Tilemap>();
+            var inputTiles = GetTilesFromTilemap(bounds, tilemap, out var inputVec);
+
+            var wfc = WfcUtils<string>.BuildFromJson(serializedJson);
+            wfc.UnLearnPattern(inputVec,inputTiles);
+            serializedJson = wfc.SerializeToJson();
+        }
+
+        public string[] GetTilesFromTilemap(BoundsInt bounds, Tilemap tilemap, out int[] inputVec)
+        {
+            inputVec = new[] { bounds.size.x, bounds.size.y };
+            var inputLength = inputVec.Aggregate((acc, e) => acc * e);
+            var inputTiles = new string[inputLength];
+            for (int i = 0; i < inputLength; i++)
+            {
+                var pos = ArrayUtils.UnRavelIndex(inputVec, i);
+                var unityIndex = ToUnityIndex(pos[0], pos[1], inputVec[0], inputVec[1]);
+
+                var offset = bounds.position;
+                try
+                {
+                    var tile = tilemap.GetTile<Tile>(offset + new Vector3Int(unityIndex.x, unityIndex.y));
+                    if (tile == null)
+                    {
+                        // Empty
+                        continue;
+                    }
+
+                    inputTiles[i] = HashSprite(tile.sprite);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError(
+                        $"Failed to get Tile from {offset + new Vector3Int(unityIndex.x, unityIndex.y)}, SKIPPED!\n{e}\n{e.StackTrace}");
+                }
+            }
+
+            return inputTiles;
+        }
+
+        public void CreateWfcFromTileSet()
         {
             tileSet.filterMode = FilterMode.Point;
             
@@ -110,10 +140,17 @@ namespace Script
 
             var hashedSpriteInput = sprites.Select(HashSprite).ToArray();
 
-            var wfc = new WfcUtils<string>(2,sprites.Length,sizeInput,hashedSpriteInput,BorderBehavior.Wrap,new System.Random(DateTime.Now.Millisecond),new Neibours2(),null,WfcUtils<string>.NextCell.NextCellEnum.MinState,WfcUtils<string>.SelectPattern.SelectPatternEnum.PatternUniform);
+            var wfc = new WfcUtils<string>(2,sizeInput,hashedSpriteInput,BorderBehavior.Wrap,new System.Random(DateTime.Now.Millisecond),new Neibours2(),null,WfcUtils<string>.NextCell.NextCellEnum.MinState,WfcUtils<string>.SelectPattern.SelectPatternEnum.PatternUniform);
             serializedJson = wfc.SerializeToJson();
-            
-            
+        }
+        
+        public void CreateFromSelection(BoundsInt boundsInt)
+        {
+            var input = GetTilesFromTilemap(boundsInt, GetComponent<Tilemap>(), out var inputVec);
+            // var hashedSpriteInput = sprites.Select(HashSprite).ToArray();
+
+            var wfc = new WfcUtils<string>(2,inputVec,input,BorderBehavior.Wrap,new System.Random(DateTime.Now.Millisecond),new Neibours2(),null,WfcUtils<string>.NextCell.NextCellEnum.MinState,WfcUtils<string>.SelectPattern.SelectPatternEnum.PatternUniform);
+            serializedJson = wfc.SerializeToJson();
         }
 
         private Vector2Int ToUnityIndex(int x, int y, int w, int h)
