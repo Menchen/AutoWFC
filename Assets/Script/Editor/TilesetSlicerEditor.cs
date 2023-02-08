@@ -10,7 +10,7 @@ using WFC;
 namespace Script
 {
     [CustomEditor(typeof(TilesetSlicer))]
-    public class TilesetSlicerEditor : Editor
+    public class TilesetSlicerEditor : UnityEditor.Editor
     {
         // private BoundsInt selectionBounds;
         private Vector3Int? _p1, _p2;

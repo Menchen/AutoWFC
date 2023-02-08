@@ -11,8 +11,9 @@ using System.Linq;
 using Newtonsoft.Json;
 using Script.Converters;
 using Script.GenericUtils;
-using Unity.VisualScripting.Dependencies.NCalc;
+#if UNITY_64
 using UnityEngine;
+#endif
 using Random = System.Random;
 using V = TypedArray<int>;
 
@@ -263,6 +264,7 @@ namespace WFC
             output = null;
             if (res is not null)
             {
+                Debug.LogWarning($"WFC failed at {string.Join(", ",res.Value)}");
                 return false;
             }
 

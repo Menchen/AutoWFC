@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 // ReSharper disable once CheckNamespace
 namespace System.Collections
@@ -50,14 +51,14 @@ namespace System.Collections
                 }
             }
 
-            return -1;
+            throw new IndexOutOfRangeException("Couldn't find first index");
         }
         /**
          * Efficient random index with value
          */
         public static int FindRandomIndex(this BitArray bitArray, int count, Random random, bool value = true)
         {
-            var lastVar = -1;
+            int? lastVar = null;
             var index = random.Next(count);
             for (var i = 0; i < bitArray.Count; i++)
             {
@@ -73,7 +74,13 @@ namespace System.Collections
                 }
             }
 
-            return lastVar;
+
+            if (lastVar is null || bitArray[lastVar.Value] == value)
+            {
+                throw new IndexOutOfRangeException($"Failed to find random index with value {value}");
+            }
+
+            return lastVar!.Value;
         }
 
         public static IEnumerable<bool> Iterate(this BitArray bitArray)
