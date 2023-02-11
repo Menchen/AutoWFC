@@ -42,8 +42,9 @@ namespace Script
 
         public void WfcWithJson(BoundsInt bounds)
         {
-            var sprites = Resources.LoadAll<Sprite>(tileSet.name);
-            var lookup = sprites.GroupBy(HashSprite).ToDictionary(e => e.Key, e => e.First());
+            // var sprites = Resources.LoadAll<Sprite>(tileSet.name);
+            // var lookup = sprites.GroupBy(HashSprite).ToDictionary(e => e.Key, e => e.First());
+            var tileLookup = new Dictionary<string, TileBase>();
 
             var wfc = WfcUtils<string>.BuildFromJson(serializedJson);
             var outputVec = new[] { bounds.size.x, bounds.size.y };
@@ -78,9 +79,19 @@ namespace Script
             for (int i = 0; i < output.Length; i++)
             {
                 var pos = ArrayUtils.UnRavelIndex(outputVec, i);
-                var tile = ScriptableObject.CreateInstance<Tile>();
+                if (!tileLookup.ContainsKey(output[i]))
+                {
+#if UNITY_EDITOR
+                    tileLookup[output[i]] =
+                        AssetDatabase.LoadAssetAtPath<TileBase>(folderReference.Path + $"/{output[i]}.asset");
+#else
+                    // Tiles must be inside of Resources folder
+                    tileLookup[output[i]] = Resources.Load<Tile>(output[i]);
+#endif
+                }
+                var tile = tileLookup[output[i]];
                 
-                tile.sprite = output[i] is null ? null : lookup[output[i]];
+                // tile.sprite = output[i] is null ? null : lookup[output[i]];
                 var unityIndex = ToUnityIndex(pos[0], pos[1], outputVec[0], outputVec[1]);
                 // tilemap.SetEditorPreviewTile(offset+new Vector3Int(unityIndex.x, unityIndex.y), tile);
                 
@@ -203,6 +214,7 @@ namespace Script
             // return new Vector2Int(x, y);
             return new Vector2Int(x, h - y-1);
         }
+
 
         public string HashSprite(Sprite value)
         {

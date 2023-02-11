@@ -11,7 +11,6 @@ namespace Script
         public string GUID;
  
         public string Path => AssetDatabase.GUIDToAssetPath(GUID);
-    //    public DefaultAsset Asset => AssetDatabase.LoadAssetAtPath<DefaultAsset>(Path);
     }
  
     [CustomPropertyDrawer(typeof(FolderReference))]
