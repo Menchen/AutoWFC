@@ -216,6 +216,13 @@ namespace WFC
 
         private void GeneratePatternFromLookUpTable(Dictionary<T,HashSet<T>[]>  lookupTable)
         {
+            
+            // Remove Null/Empty state
+            lookupTable = lookupTable.Where(e => !Equals(e.Key, EmptyState)).ToDictionary(e => e.Key, e =>
+            {
+                return e.Value.Select(hashSet => hashSet.Where(pattern => !Equals(pattern, EmptyState)).ToHashSet()).ToArray();
+            });
+            
             // Populate Patterns Ids
             var id = 0;
             var patternsDict = new Dictionary<T, Pattern>();
