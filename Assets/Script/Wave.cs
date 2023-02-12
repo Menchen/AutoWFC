@@ -205,10 +205,11 @@ namespace WFC
                         }
 
                         // Checking if patternId is still valid for current element because it can be invalidated by neighbours propagation
-                        var observedValue = CurrentWave[i].Coefficient[patternId]
-                            ? patternId
-                            : Wfc.PatternFn(this, CurrentWave[i]);
-                        var err = Collapse(CurrentWave[i], observedValue);
+                        if (!CurrentWave[i].Coefficient[patternId])
+                        {
+                            continue;
+                        }
+                        var err = Collapse(CurrentWave[i], patternId);
                         if (err is null)
                         {
                             Propagate(CurrentWave[i]);
