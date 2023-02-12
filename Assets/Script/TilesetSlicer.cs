@@ -47,6 +47,7 @@ namespace Script
             var tileLookup = new Dictionary<string, TileBase>();
 
             var wfc = WfcUtils<string>.BuildFromJson(serializedJson);
+            wfc.Logger += Debug.LogWarning;
             var outputVec = new[] { bounds.size.x, bounds.size.y };
             var offset = bounds.position;
             

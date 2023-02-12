@@ -11,9 +11,6 @@ using System.Linq;
 using Newtonsoft.Json;
 using Script.Converters;
 using Script.GenericUtils;
-#if UNITY_64
-using UnityEngine;
-#endif
 using Random = System.Random;
 using V = TypedArray<int>;
 
@@ -47,6 +44,8 @@ namespace WFC
         [JsonIgnore] public Func<Wave, Element> NextCellFn;
 
         [JsonIgnore] public Action<Wave> OnPropagate;
+
+        public event Action<string> Logger;
 
         public readonly T EmptyState;
 
@@ -271,7 +270,7 @@ namespace WFC
             output = null;
             if (res is not null)
             {
-                Debug.LogWarning($"WFC failed at {string.Join(", ",res.Value)}");
+                Logger?.Invoke($"WFC failed at {string.Join(", ",res.Value)}");
                 return false;
             }
 
@@ -418,7 +417,7 @@ namespace WFC
                 }
 
                 // throw new InvalidOperationException($"Failed to select pattern for {string.Join(",", e.Pos.Value)}");
-                Debug.Log($"Failed to select pattern for {string.Join(",", e.Pos.Value)}");
+                w.Wfc.Logger?.Invoke($"Failed to select pattern for {string.Join(",", e.Pos.Value)}");
                 return -1;
             }
 
@@ -447,7 +446,7 @@ namespace WFC
                 }
 
                 // throw new InvalidOperationException($"Failed to select pattern for {string.Join(",", e.Pos.Value)}");
-                Debug.Log($"Failed to select pattern for {string.Join(",", e.Pos.Value)}");
+                w.Wfc.Logger?.Invoke($"Failed to select pattern for {string.Join(",", e.Pos.Value)}");
                 return -1;
             }
         }

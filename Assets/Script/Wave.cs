@@ -3,9 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Script.Extensions;
-#if UNITY_64
-using UnityEngine;
-#endif
 using V = TypedArray<int>;
 
 namespace WFC
@@ -53,9 +50,7 @@ namespace WFC
                 var p = this.Wfc.Patterns[n.Value];
                 if (!e.Collapse(n.Value, p.Value))
                 {
-#if UNITY_64
-                    Debug.LogWarning($"Failed to collapse {string.Join(", ",e.Pos)}");
-#endif
+                    Wfc.Logger?.Invoke($"Failed to collapse {string.Join(", ",e.Pos)}");
                     return e.Pos;
                 }
 
@@ -68,9 +63,7 @@ namespace WFC
                 var n = this.Wfc.PatternFn(this, e);
                 if (n < 0)
                 {
-#if UNITY_64
-                    Debug.LogWarning($"Failed to observe {string.Join(", ",e.Pos)}");
-#endif
+                    Wfc.Logger?.Invoke($"Failed to observe {string.Join(", ",e.Pos)}");
                     return e.Pos;
                 }
 
@@ -151,9 +144,7 @@ namespace WFC
                                 // zero popcount = contradiction
                                 this.Collapse(neighbourElement, 0);
                                 contradiction = neighbourElement.Pos;
-#if UNITY_64
-                                Debug.LogError($"Failed to converge (0 state) at {string.Join(", ",contradiction)}");
-#endif
+                                Wfc.Logger?.Invoke($"Failed to converge (0 state) at {string.Join(", ",contradiction)}");
                             }
                             else if (newCount == 1)
                             {
