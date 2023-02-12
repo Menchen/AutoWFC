@@ -198,8 +198,11 @@ namespace WFC
                     {
                         if (Equals(Preset[i], Wfc.EmptyState) || Preset[i] is null || CurrentWave[i].Collapsed)
                             continue;
-
-                        var patternId = Wfc.PatternLookUp[Preset[i]];
+                        if (!Wfc.PatternLookUp.TryGetValue(Preset[i],out var patternId))
+                        {
+                            Wfc.Logger($"Tile [{Preset[i]}] not found in pattern, try learning it before WFC?");
+                            throw new InvalidOperationException($"Tile {Preset[i]} found in preset but not in Pattern.");
+                        }
 
                         // Checking if patternId is still valid for current element because it can be invalidated by neighbours propagation
                         var observedValue = CurrentWave[i].Coefficient[patternId]
