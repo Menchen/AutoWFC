@@ -96,12 +96,13 @@ namespace WFC
 
 
             var lookupTable = new Dictionary<T, HashSet<T>[]>();
+            var frequencyTable = new Dictionary<T, int>();
 
             for (int i = 0; i < sizeInputLength; i++)
             {
                 var index = ArrayUtils.UnRavelIndex(sizeInput, i);
                 var centerValue = input[i];
-                if (centerValue is null)
+                if (centerValue is null || Equals(emptyState,centerValue))
                 {
                     continue;
                 }
@@ -120,10 +121,11 @@ namespace WFC
                     }
                 }
 
+                frequencyTable[centerValue] = frequencyTable.GetValueOrDefault(centerValue) + 1;
                 lookupTable[centerValue] = listArray;
             }
-            
-            GeneratePatternFromLookUpTable(lookupTable);
+
+            GeneratePatternFromLookUpTable(lookupTable,frequencyTable);
         }
 
         public void LearnNewPattern(V sizeInput, T[] input)
@@ -139,6 +141,8 @@ namespace WFC
                     .ToHashSet();
             }).ToArray());
 
+            var frequencyTable = Patterns.ToDictionary(e=>e.Value,e => e.Frequency);
+            
             for (int i = 0; i < sizeInputLength; i++)
             {
                 var index = ArrayUtils.UnRavelIndex(sizeInput, i);
@@ -162,11 +166,13 @@ namespace WFC
                     }
                 }
 
+                frequencyTable[centerValue] = frequencyTable.GetValueOrDefault(centerValue) + 1;
                 lookupTable[centerValue] = listArray;
             }
-            GeneratePatternFromLookUpTable(lookupTable);
+
+            GeneratePatternFromLookUpTable(lookupTable,frequencyTable);
         }
-        
+
         public void UnLearnPattern(V sizeInput, T[] input)
         {
             // Get pattern data from input 
@@ -179,6 +185,8 @@ namespace WFC
                 return b.IterateWithIndex().Where(tuple => tuple.Item1).Select(tuple => Patterns[tuple.Item2].Value)
                     .ToHashSet();
             }).ToArray());
+
+            var frequencyTable = Patterns.ToDictionary(e=>e.Value,e => e.Frequency);
 
             for (int i = 0; i < sizeInputLength; i++)
             {
@@ -194,6 +202,7 @@ namespace WFC
                 {
                     continue;
                 }
+
                 for (int j = 0; j < Neighbours.Length; j++)
                 {
                     var offset = index!.Zip(Neighbours.Neighbours[j], (a, b) => a + b).ToArray();
@@ -206,27 +215,30 @@ namespace WFC
                     }
                 }
 
+                // frequencyTable[centerValue] = frequencyTable.GetValueOrDefault(centerValue) - 1;
                 lookupTable[centerValue] = listArray;
             }
 
-            GeneratePatternFromLookUpTable(lookupTable);
-
+            GeneratePatternFromLookUpTable(lookupTable,frequencyTable);
         }
 
-        private void GeneratePatternFromLookUpTable(Dictionary<T,HashSet<T>[]>  lookupTable)
+        private void GeneratePatternFromLookUpTable(Dictionary<T, HashSet<T>[]> lookupTable,
+            Dictionary<T, int> frequencyTable)
         {
-            
             // Remove Null/Empty state
-            lookupTable = lookupTable.Where(e => !Equals(e.Key, EmptyState)).ToDictionary(e => e.Key, e =>
-            {
-                return e.Value.Select(hashSet => hashSet.Where(pattern => !Equals(pattern, EmptyState)).ToHashSet()).ToArray();
-            });
-            
+            lookupTable = lookupTable.Where(e => !Equals(e.Key, EmptyState)).ToDictionary(e => e.Key,
+                e =>
+                {
+                    return e.Value.Select(hashSet => hashSet.Where(pattern => !Equals(pattern, EmptyState)).ToHashSet())
+                        .ToArray();
+                });
+
             // Populate Patterns Ids
             var id = 0;
             var patternsDict = new Dictionary<T, Pattern>();
             MaskUsed = new BitArray(lookupTable.Count);
             BITSetSize = lookupTable.Count;
+            var totalFrequency = (double)frequencyTable.Values.Aggregate((a, b) => a + b);
             foreach (var kvPair in lookupTable)
             {
                 patternsDict[kvPair.Key] = new Pattern
@@ -234,6 +246,8 @@ namespace WFC
                     Id = id,
                     Value = kvPair.Key,
                     Valid = Enumerable.Range(0, Neighbours.Length).Select(_ => new BitArray(BITSetSize)).ToArray(),
+                    Frequency = frequencyTable.GetValueOrDefault(kvPair.Key),
+                    NormalizedFrequency = frequencyTable.GetValueOrDefault(kvPair.Key)/totalFrequency
                 };
 
                 MaskUsed.Set(id, true);
@@ -270,7 +284,7 @@ namespace WFC
             output = null;
             if (res is not null)
             {
-                Logger?.Invoke($"WFC failed at {string.Join(", ",res.Value)}");
+                Logger?.Invoke($"WFC failed at {string.Join(", ", res.Value)}");
                 return false;
             }
 
@@ -390,8 +404,8 @@ namespace WFC
 
             public static int PatternWeighted(Wave w, Element e)
             {
-                var sum = 0f;
-                var distributionList = new float[e.Coefficient.Count];
+                var sum = 0d;
+                var distributionList = new double[e.Coefficient.Count];
                 for (int i = 0; i < e.Coefficient.Count; i++)
                 {
                     if (!e.Coefficient[i])
@@ -399,13 +413,13 @@ namespace WFC
                         continue;
                     }
 
-                    distributionList[i] = w.Wfc.Patterns[i].Frequency;
-                    sum += w.Wfc.Patterns[i].Frequency;
+                    distributionList[i] = w.Wfc.Patterns[i].NormalizedFrequency;
+                    sum += w.Wfc.Patterns[i].NormalizedFrequency;
                 }
 
                 // Random Double in range (0,sum)
                 var r = w.Wfc.Random.NextDouble() * sum;
-                var accumulator = 0f;
+                var accumulator = 0d;
                 for (int i = 0; i < distributionList.Length; i++)
                 {
                     accumulator += distributionList[i];

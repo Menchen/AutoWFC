@@ -49,9 +49,9 @@ namespace WFC
                         continue;
                     }
 
-                    var weight = w.Wfc.Patterns[i].Frequency;
+                    var weight = w.Wfc.Patterns[i].NormalizedFrequency;
                     this.SumWeights += weight;
-                    this.SumWeightsLogWeights += weight * Math.Log(weight);
+                    this.SumWeightsLogWeights += weight * Math.Log(weight,2.0);
                 }
             }
 
@@ -72,7 +72,7 @@ namespace WFC
                         continue;
                     }
 
-                    var weight = w.Wfc.Patterns[i].Frequency;
+                    var weight = w.Wfc.Patterns[i].NormalizedFrequency;
                     this.SumWeights -= weight;
                     this.SumWeightsLogWeights -= weight * Math.Log(weight);
                 }

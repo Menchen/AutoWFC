@@ -16,19 +16,16 @@ namespace WFC
             {
                 
             }
-            public Pattern(T[] data, int neighbourLength,int bitsetSize,int vol)
-            {
-                this.Data = data ?? throw new ArgumentNullException();
-                // Get center
-                Value = data[vol / 2];
-                    
-                Valid = Enumerable.Range(0, neighbourLength).Select(_ => new BitArray(bitsetSize)).ToArray();
-            }
 
             public int Id { get; set; }
-            public float Frequency { get; set; }
+            
+            public double NormalizedFrequency { get; set; } // A.K.A Probability
+            public int Frequency { get; set; }
+
+            [JsonIgnore] public double Entropy => -NormalizedFrequency * Math.Log(NormalizedFrequency, 2);
+            
             public T Value { get; set; }
-            public T[] Data { get; set; }
+            // public T[] Data { get; set; }
             
             [JsonProperty(ItemConverterType = typeof(BitArrayConverter))]
             public BitArray[] Valid {get; set; }
@@ -38,7 +35,7 @@ namespace WFC
             private int? _cachedHash = null;
             
             [JsonIgnore]
-            public int Hash => _cachedHash ??= ((IStructuralEquatable) this.Data).GetHashCode(EqualityComparer<T>.Default);
+            public int Hash => _cachedHash ??= ((IStructuralEquatable) this.Value).GetHashCode(EqualityComparer<T>.Default);
             // public int Hash => Value;
 
             public static bool operator ==(Pattern a, Pattern b)
