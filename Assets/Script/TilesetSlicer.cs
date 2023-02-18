@@ -125,7 +125,7 @@ namespace Script
 
         public string[] GetTilesFromTilemap(BoundsInt bounds, Tilemap tilemap, out int[] inputVec)
         {
-            bool saveToFolder = folderReference != null;
+            bool saveToFolder = !string.IsNullOrEmpty(folderReference?.Path);
             inputVec = new[] { bounds.size.x, bounds.size.y };
             var inputLength = inputVec.Aggregate((acc, e) => acc * e);
             var inputTiles = new string[inputLength];
@@ -169,7 +169,7 @@ namespace Script
 
         public void CreateWfcFromTileSet()
         {
-            bool saveToFolder = folderReference != null;
+            bool saveToFolder = !string.IsNullOrEmpty(folderReference?.Path);
             tileSet.filterMode = FilterMode.Point;
             
             var sprites = Resources.LoadAll<Sprite>(tileSet.name);
