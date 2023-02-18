@@ -19,18 +19,20 @@ namespace Script
 
         private enum SelectState
         {
-            None,Drag,Done
+            None,
+            Drag,
+            Done
         }
+
         private enum EditorMode
         {
-            None,Select
+            None,
+            Select
         }
 
 
         private void HandleSelection()
         {
-
-
             var id = GUIUtility.GetControlID(FocusType.Passive);
             var mouseGlobal = HandleUtility.GUIPointToWorldRay(Event.current.mousePosition).GetPoint(0);
             mouseGlobal.z = 0;
@@ -46,12 +48,15 @@ namespace Script
                         GUIUtility.hotControl = id;
                         Event.current.Use();
                     }
+
                     break;
                 case SelectState.Drag:
                     if (Event.current.type == EventType.MouseDrag)
                     {
                         Event.current.Use();
-                    }else if (Event.current.type == EventType.MouseMove && Event.current.button == 0)
+                    }
+                    else if (Event.current.type is EventType.MouseMove or EventType.MouseUp &&
+                             Event.current.button == 0)
                     {
                         _selectState = SelectState.None;
                         _p2 = local;
@@ -59,9 +64,9 @@ namespace Script
                         Event.current.Use();
                         GUIUtility.hotControl = 0;
                     }
+
                     break;
             }
-            
         }
 
         public void OnSceneGUI()
@@ -79,36 +84,38 @@ namespace Script
                     if (_p1 is null)
                     {
                         // Draw mouse preview
-                        GridEditorUtility.DrawGridMarquee(_tilemap,new BoundsInt(local,Vector3Int.one),Color.cyan);
-                    }else if (_p2 is null)
+                        GridEditorUtility.DrawGridMarquee(_tilemap, new BoundsInt(local, Vector3Int.one), Color.cyan);
+                    }
+                    else if (_p2 is null)
                     {
                         // p1 selected and p2 missing
-                        GridEditorUtility.DrawGridMarquee(_tilemap, _p1.Value.BoundsIntFrom2Points(local),Color.cyan);
+                        GridEditorUtility.DrawGridMarquee(_tilemap, _p1.Value.BoundsIntFrom2Points(local), Color.cyan);
                     }
                 }
 
                 if (_p1 is not null && _p2 is not null)
                 {
                     // p1 & p2 selected
-                    GridEditorUtility.DrawGridMarquee(_tilemap, _p1.Value.BoundsIntFrom2Points(_p2.Value),Color.cyan);
+                    GridEditorUtility.DrawGridMarquee(_tilemap, _p1.Value.BoundsIntFrom2Points(_p2.Value), Color.cyan);
                 }
-                
-            }else if (Event.current.type != EventType.Used)
+            }
+            else if (Event.current.type != EventType.Used)
             {
                 // Force repaint on mouse movement
                 switch (_editorMode)
                 {
                     case EditorMode.Select:
-                            HandleSelection();
+                        HandleSelection();
                         break;
                 }
-                
+
                 SceneView.currentDrawingSceneView.Repaint();
             }
         }
 
         private TilesetSlicer _targetTilesetSlicer;
         private Tilemap _tilemap;
+
         private void OnEnable()
         {
             _targetTilesetSlicer = (TilesetSlicer)target;
@@ -125,21 +132,23 @@ namespace Script
             DrawDefaultInspector();
 
             // public static void DrawGridMarquee(GridLayout gridLayout, BoundsInt area, Color color)
-            
+
             // SelectionActive = GridSelection.active;
-            TilesetSlicer slicer = (TilesetSlicer) target;
+            TilesetSlicer slicer = (TilesetSlicer)target;
             // GridEditorUtility.
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Create new pattern From tileset"))
             {
                 slicer.CreateWfcFromTileSet();
             }
+
             var oldEnabled = GUI.enabled;
             GUI.enabled = _p1 is not null && _p2 is not null;
             if (GUILayout.Button("Create new pattern from selection"))
             {
                 slicer.CreateFromSelection(slicer.CurrentSelection.Value);
             }
+
             GUILayout.EndHorizontal();
             GUILayout.BeginHorizontal();
 
@@ -161,32 +170,32 @@ namespace Script
             {
                 slicer.UnLearnPatternFromRegion(slicer.CurrentSelection.Value);
             }
-            
+
             if (clickedGenerateRegion)
             {
-                slicer.WfcWithJson( _p1!.Value.BoundsIntFrom2Points(_p2!.Value));
+                slicer.WfcWithJson(_p1!.Value.BoundsIntFrom2Points(_p2!.Value));
             }
 
             if (clickSetToEmpty)
             {
                 var tilemap = slicer.GetComponent<Tilemap>();
-                tilemap.BoxFill(slicer.CurrentSelection.Value.position,null,0,0,slicer.CurrentSelection.Value.size.x,slicer.CurrentSelection.Value.size.y);
+                tilemap.BoxFill(slicer.CurrentSelection.Value.position, null, 0, 0,
+                    slicer.CurrentSelection.Value.size.x, slicer.CurrentSelection.Value.size.y);
                 for (int x = 0; x < slicer.CurrentSelection.Value.size.x; x++)
                 {
                     for (int y = 0; y < slicer.CurrentSelection.Value.size.y; y++)
                     {
-                        tilemap.SetTile(slicer.CurrentSelection.Value.position+new Vector3Int(x,y,0),null);
-                        
+                        tilemap.SetTile(slicer.CurrentSelection.Value.position + new Vector3Int(x, y, 0), null);
                     }
                 }
             }
 
             _selectActive = GUILayout.Toggle(_selectActive, "Select");
-            _editorMode = _selectActive? EditorMode.Select : EditorMode.None;
+            _editorMode = _selectActive ? EditorMode.Select : EditorMode.None;
             if (_selectActive)
             {
                 // _selectActive = !_selectActive;
-                _editorMode = _selectActive? EditorMode.Select : EditorMode.None;
+                _editorMode = _selectActive ? EditorMode.Select : EditorMode.None;
                 if (_selectActive)
                 {
                     _lastTool = Tools.current;
@@ -200,9 +209,9 @@ namespace Script
                     Tools.hidden = false;
                 }
             }
+
             GUILayout.EndHorizontal();
             GUILayout.Label($"Editor Tools Label");
         }
-
     }
 }
