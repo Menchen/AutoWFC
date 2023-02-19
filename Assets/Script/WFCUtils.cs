@@ -24,6 +24,8 @@ namespace WFC
         // [JsonProperty] public int PatternSize { get; private set; }
         [JsonProperty] public int BITSetSize { get; private set; }
 
+        [JsonProperty] public float MutationMultiplier { get; set; }
+
         // public int Vol => Convert.ToInt32(Math.Pow(PatternSize, Dimension));
 
         public List<Pattern> Patterns;
@@ -53,7 +55,8 @@ namespace WFC
 
         [JsonIgnore] public Dictionary<T, int> PatternLookUp;
 
-        // [JsonProperty] public int[] PatternSizeVec { get; private set; }
+        [JsonIgnore] public Dictionary<string, object> Context; // Used by external function e.g PatternFn & NextCellFn
+
 
         public static WfcUtils<T> BuildFromJson(string json)
         {
@@ -102,7 +105,7 @@ namespace WFC
             {
                 var index = ArrayUtils.UnRavelIndex(sizeInput, i);
                 var centerValue = input[i];
-                if (centerValue is null || Equals(emptyState,centerValue))
+                if (centerValue is null || Equals(emptyState, centerValue))
                 {
                     continue;
                 }
@@ -125,7 +128,7 @@ namespace WFC
                 lookupTable[centerValue] = listArray;
             }
 
-            GeneratePatternFromLookUpTable(lookupTable,frequencyTable);
+            GeneratePatternFromLookUpTable(lookupTable, frequencyTable);
         }
 
         public void LearnNewPattern(V sizeInput, T[] input)
@@ -141,8 +144,8 @@ namespace WFC
                     .ToHashSet();
             }).ToArray());
 
-            var frequencyTable = Patterns.ToDictionary(e=>e.Value,e => e.Frequency);
-            
+            var frequencyTable = Patterns.ToDictionary(e => e.Value, e => e.Frequency);
+
             for (int i = 0; i < sizeInputLength; i++)
             {
                 var index = ArrayUtils.UnRavelIndex(sizeInput, i);
@@ -170,7 +173,7 @@ namespace WFC
                 lookupTable[centerValue] = listArray;
             }
 
-            GeneratePatternFromLookUpTable(lookupTable,frequencyTable);
+            GeneratePatternFromLookUpTable(lookupTable, frequencyTable);
         }
 
         public void UnLearnPattern(V sizeInput, T[] input)
@@ -186,7 +189,7 @@ namespace WFC
                     .ToHashSet();
             }).ToArray());
 
-            var frequencyTable = Patterns.ToDictionary(e=>e.Value,e => e.Frequency);
+            var frequencyTable = Patterns.ToDictionary(e => e.Value, e => e.Frequency);
 
             for (int i = 0; i < sizeInputLength; i++)
             {
@@ -219,7 +222,7 @@ namespace WFC
                 lookupTable[centerValue] = listArray;
             }
 
-            GeneratePatternFromLookUpTable(lookupTable,frequencyTable);
+            GeneratePatternFromLookUpTable(lookupTable, frequencyTable);
         }
 
         private void GeneratePatternFromLookUpTable(Dictionary<T, HashSet<T>[]> lookupTable,
@@ -247,7 +250,7 @@ namespace WFC
                     Value = kvPair.Key,
                     Valid = Enumerable.Range(0, Neighbours.Length).Select(_ => new BitArray(BITSetSize)).ToArray(),
                     Frequency = frequencyTable.GetValueOrDefault(kvPair.Key),
-                    NormalizedFrequency = frequencyTable.GetValueOrDefault(kvPair.Key)/totalFrequency
+                    NormalizedFrequency = frequencyTable.GetValueOrDefault(kvPair.Key) / totalFrequency
                 };
 
                 MaskUsed.Set(id, true);
@@ -396,15 +399,40 @@ namespace WFC
                     case SelectPatternEnum.PatternUniform:
                         return PatternUniform;
                     case SelectPatternEnum.PatternWeighted:
-                        return PatternWeighted;
+                        return PatternEntropyWeighted;
                 }
 
                 return null;
             }
 
-            public static int PatternWeighted(Wave w, Element e)
+            public static int PatternMaxEntropy(Wave w, Element e)
+            {
+                var multiplierRange = w.Wfc.MutationMultiplier * 0.25f;
+                var multiplierStart = 1f - multiplierRange;
+                multiplierRange *= 2f;
+                var max = e.Coefficient.IterateWithIndex().Select(validState =>
+                        (validState.Item2,
+                            validState.Item1
+                                ? w.Wfc.Patterns[validState.Item2].Entropy *
+                                  (w.Wfc.Random.NextDouble() * multiplierRange + multiplierStart) // Mutation multiplier
+                                : 0))
+                    .Aggregate((x, acc) => x.Item2 > acc.Item2 ? x : acc);
+
+                var returnValue = e.Coefficient[max.Item1] ? max.Item1 : -1;
+                if (returnValue < 0)
+                {
+                    w.Wfc.Logger?.Invoke($"Failed to select pattern for {string.Join(",", e.Pos.Value)}");
+                }
+
+                return returnValue;
+            }
+
+            public static int PatternEntropyWeighted(Wave w, Element e)
             {
                 var sum = 0d;
+                var multiplierRange = w.Wfc.MutationMultiplier * 0.25f;
+                var multiplierStart = 1f - multiplierRange;
+                multiplierRange *= 2f;
                 var distributionList = new double[e.Coefficient.Count];
                 for (int i = 0; i < e.Coefficient.Count; i++)
                 {
@@ -413,8 +441,10 @@ namespace WFC
                         continue;
                     }
 
-                    distributionList[i] = w.Wfc.Patterns[i].NormalizedFrequency;
-                    sum += w.Wfc.Patterns[i].NormalizedFrequency;
+                    var multiplier = w.Wfc.Random.NextDouble() * multiplierRange + multiplierStart;
+                    var entropy = w.Wfc.Patterns[i].Entropy * multiplier;
+                    distributionList[i] = entropy;
+                    sum += entropy;
                 }
 
                 // Random Double in range (0,sum)

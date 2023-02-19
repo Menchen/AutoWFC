@@ -18,7 +18,6 @@ namespace WFC
             public T Value;
 
             public double SumWeights { get; set; }
-            public double SumWeightsLogWeights { get; set; }
             public double Entropy { get; set; }
 
             // public Element(Wave w, BitArray mask)
@@ -49,9 +48,8 @@ namespace WFC
                         continue;
                     }
 
-                    var weight = w.Wfc.Patterns[i].NormalizedFrequency;
-                    this.SumWeights += weight;
-                    this.SumWeightsLogWeights += weight * Math.Log(weight,2.0);
+                    SumWeights += w.Wfc.Patterns[i].NormalizedFrequency;
+                    Entropy += w.Wfc.Patterns[i].Entropy;
                 }
             }
 
@@ -72,14 +70,12 @@ namespace WFC
                         continue;
                     }
 
-                    var weight = w.Wfc.Patterns[i].NormalizedFrequency;
-                    this.SumWeights -= weight;
-                    this.SumWeightsLogWeights -= weight * Math.Log(weight);
+                    this.SumWeights -= w.Wfc.Patterns[i].NormalizedFrequency;
+                    this.Entropy -= w.Wfc.Patterns[i].Entropy;
                 }
 
                 // this.Entropy = Math.Log(this.SumWeights) - (this.SumWeightsLogWeights / this.SumWeights);
                 this.Popcnt = this.Coefficient.GetCardinality();
-                this.Entropy = Popcnt;
                 return this.Popcnt != 0;
             }
 
@@ -94,9 +90,8 @@ namespace WFC
                 this.Coefficient.SetAll(false);
                 this.Coefficient.Set(n, true);
                 this.Popcnt = 1;
-                this.Entropy = 0.0d;
                 this.SumWeights = 0.0d;
-                this.SumWeightsLogWeights = 0.0d;
+                this.Entropy = 0.0d;
                 return true;
             }
 
