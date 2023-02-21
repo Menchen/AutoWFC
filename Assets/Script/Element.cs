@@ -57,7 +57,7 @@ namespace WFC
              */
             public void Apply(Wave w, BitArray mask)
             {
-                var diff = new BitArray(this.Coefficient).And(mask);
+                var diff = new BitArray(Coefficient).Xor(mask);
                 if (diff.GetCardinality() == 0)
                 {
                     // Mask is same as Coefficient, nothing to do.
