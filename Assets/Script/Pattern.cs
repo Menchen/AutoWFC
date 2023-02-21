@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using Newtonsoft.Json;
 using Script.Converters;
 using V = TypedArray<int>;
@@ -12,10 +11,6 @@ namespace WFC
     {
         public class Pattern
         {
-            public Pattern()
-            {
-            }
-
             public int Id { get; set; }
 
             public double NormalizedFrequency { get; set; } // A.K.A Probability
@@ -30,13 +25,13 @@ namespace WFC
             [JsonProperty(ItemConverterType = typeof(BitArrayConverter))]
             public BitArray[] Valid { get; set; }
 
-            [JsonIgnore] private double? _cachedEntropy = null;
+            [JsonIgnore] private double? _cachedEntropy;
 
-            [JsonIgnore] private int? _cachedHash = null;
+            [JsonIgnore] private int? _cachedHash;
 
             [JsonIgnore]
             public int Hash =>
-                _cachedHash ??= ((IStructuralEquatable)this.Value).GetHashCode(EqualityComparer<T>.Default);
+                _cachedHash ??= ((IStructuralEquatable)Value).GetHashCode(EqualityComparer<T>.Default);
             // public int Hash => Value;
 
             public static bool operator ==(Pattern a, Pattern b)
@@ -54,7 +49,7 @@ namespace WFC
             {
                 if (ReferenceEquals(null, obj)) return false;
                 if (ReferenceEquals(this, obj)) return true;
-                if (obj.GetType() != this.GetType()) return false;
+                if (obj.GetType() != GetType()) return false;
                 return Hash == ((Pattern)obj).Hash;
             }
 

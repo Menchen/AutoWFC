@@ -36,7 +36,7 @@ namespace Script
             var dataArray = new TileData<Tile>[tiles.Length];
             for (int i = 0; i < tiles.Length; i++)
             {
-                var data = new TileData<Tile>()
+                var data = new TileData<Tile>
                 {
                     Position = new Vector2Int(tiles[i].position.x,tiles[i].position.y),
                     Tile = (Tile) tiles[i].tile,

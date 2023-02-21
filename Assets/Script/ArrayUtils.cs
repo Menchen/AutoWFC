@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using JetBrains.Annotations;
 
 public static class ArrayUtils
@@ -72,7 +70,7 @@ public struct TypedArray<T>
 
     private TypedArray(T[] value)
     {
-        this.Value = value;
+        Value = value;
     }
 
     public static implicit operator T[](TypedArray<T> typedArray)

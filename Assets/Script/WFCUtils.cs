@@ -11,7 +11,6 @@ using System.Linq;
 using Newtonsoft.Json;
 using Script.Converters;
 using Script.GenericUtils;
-using Random = System.Random;
 using V = TypedArray<int>;
 
 
@@ -38,8 +37,33 @@ namespace WFC
 
         [JsonIgnore] public BorderBehavior BorderBehavior;
 
-        public SelectPattern.SelectPatternEnum SelectPatternEnum;
-        public NextCell.NextCellEnum NextCellEnum;
+        [JsonProperty]
+        public SelectPattern.SelectPatternEnum SelectPatternEnum
+        {
+            get => _selectPatternEnum;
+            set
+            {
+                _selectPatternEnum = value;
+                PatternFn = SelectPattern.GetPatternFn(value);
+            }
+        }
+        
+        [JsonIgnore]
+        private SelectPattern.SelectPatternEnum _selectPatternEnum;
+
+        [JsonProperty]
+        public NextCell.NextCellEnum NextCellEnum
+        {
+            get => _nextCellEnum;
+            set
+            {
+                _nextCellEnum = value;
+                NextCellFn = NextCell.GetNextCellFn(value);
+            }
+        }
+
+        [JsonIgnore]
+        private NextCell.NextCellEnum _nextCellEnum;
 
         [JsonIgnore] public Func<Wave, Element, int> PatternFn;
 
@@ -61,8 +85,8 @@ namespace WFC
         public static WfcUtils<T> BuildFromJson(string json)
         {
             var wfcUtils = JsonConvert.DeserializeObject<WfcUtils<T>>(json, new BitArrayConverter());
-            wfcUtils.NextCellFn ??= NextCell.GetNextCellFn(wfcUtils.NextCellEnum);
-            wfcUtils.PatternFn ??= SelectPattern.GetPatternFn(wfcUtils.SelectPatternEnum);
+            // wfcUtils.NextCellFn ??= NextCell.GetNextCellFn(wfcUtils.NextCellEnum);
+            // wfcUtils.PatternFn ??= SelectPattern.GetPatternFn(wfcUtils.SelectPatternEnum);
             wfcUtils.Random = new Random();
             wfcUtils.PatternLookUp = wfcUtils.Patterns.ToDictionary(e => e.Value, e => e.Id);
             return wfcUtils;
@@ -295,60 +319,12 @@ namespace WFC
             return true;
         }
 
-        /**
-         * Create Array of T with size Vol, A.K.A PatternSize ** N 
-         * With neighbours from Input based with BorderBehavior
-         */
-        // private T[] DataAt(V center)
-        // {
-        //     var northWest = center.Value.Select(e => e - (PatternSize / 2)).ToArray();
-        //
-        //     if (BorderBehavior == BorderBehavior.Exclude)
-        //     {
-        //         var southEast = northWest.Select(e => e + PatternSize - 1).ToArray();
-        //         if (!ArrayUtils.InBounds(SizeInput, northWest) || !ArrayUtils.InBounds(SizeInput, southEast))
-        //         {
-        //             return null;
-        //         }
-        //     }
-        //
-        //     var dst = new T[Vol];
-        //     for (int i = 0; i < Vol; i++)
-        //     {
-        //         var offset = ArrayUtils.UnRavelIndex(PatternSizeVec, i);
-        //         var pos = northWest.Zip(offset, (a, b) => a + b).ToArray();
-        //         switch (BorderBehavior)
-        //         {
-        //             case BorderBehavior.Exclude:
-        //                 dst[i] = Input[ArrayUtils.RavelIndex(SizeInput, pos)!.Value];
-        //                 break;
-        //             case BorderBehavior.Zero:
-        //                 if (!ArrayUtils.InBounds(SizeInput, pos))
-        //                 {
-        //                     dst[i] = EmptyState;
-        //                 }
-        //
-        //                 break;
-        //             case BorderBehavior.Clamp:
-        //                 dst[i] = Input[
-        //                     ArrayUtils.RavelIndex(SizeInput,
-        //                         pos.Zip(SizeInput.Value, (v, s) => Math.Clamp(v, 0, s - 1)).ToArray())!.Value];
-        //                 break;
-        //             case BorderBehavior.Wrap:
-        //                 dst[i] = Input[
-        //                     ArrayUtils.RavelIndex(SizeInput,
-        //                         pos.Zip(SizeInput.Value, (v, s) => ((v % s) + s) % s).ToArray())!.Value];
-        //                 break;
-        //         }
-        //     }
-        //
-        //     return dst;
-        // }
         public static class NextCell
         {
             public enum NextCellEnum
             {
-                MinState
+                MinState,
+                MaxEntropy,
             }
 
             public static Func<Wave, Element> GetNextCellFn(NextCellEnum w)
@@ -357,6 +333,8 @@ namespace WFC
                 {
                     case NextCellEnum.MinState:
                         return MinState;
+                    case NextCellEnum.MaxEntropy:
+                        return MaxEntropy;
                 }
 
                 return null;
@@ -382,14 +360,44 @@ namespace WFC
 
                 return minElement;
             }
+            public static Element MaxEntropy(Wave w)
+            {
+                var maxValue = double.MinValue;
+                Element maxElement = null;
+                var multiplierRange = w.Wfc.MutationMultiplier * 0.25f;
+                var multiplierStart = 1f - multiplierRange;
+                multiplierRange *= 2f;
+                foreach (var element in w.CurrentWave)
+                {
+                    if (element.Collapsed)
+                    {
+                        continue;
+                    }
+                    var mutatedEntropy = element.Entropy * (w.Wfc.Random.NextDouble() * multiplierRange + multiplierStart);
+                    if (mutatedEntropy > maxValue)
+                    {
+                        maxElement = element;
+                        maxValue = mutatedEntropy;
+                    }
+                }
+
+                if (maxElement is null)
+                {
+                    throw new InvalidOperationException("Failed to find Next Cell/Converge");
+                }
+
+                return maxElement;
+            }
         }
 
         public static class SelectPattern
         {
             public enum SelectPatternEnum
             {
-                PatternWeighted,
-                PatternUniform
+                PatternEntropyWeighted,
+                PatternUniform,
+                PatternFrequencyWeighted,
+                PatternMaxEntropy,
             }
 
             public static Func<Wave, Element, int> GetPatternFn(SelectPatternEnum w)
@@ -398,11 +406,53 @@ namespace WFC
                 {
                     case SelectPatternEnum.PatternUniform:
                         return PatternUniform;
-                    case SelectPatternEnum.PatternWeighted:
+                    case SelectPatternEnum.PatternEntropyWeighted:
                         return PatternEntropyWeighted;
+                    case SelectPatternEnum.PatternFrequencyWeighted:
+                        return PatternFrequencyWeighted;
+                    case SelectPatternEnum.PatternMaxEntropy:
+                        return PatternMaxEntropy;
                 }
 
                 return null;
+            }
+            
+            public static int PatternFrequencyWeighted(Wave w, Element e)
+            {
+                var sum = 0d;
+                var multiplierRange = w.Wfc.MutationMultiplier * 0.25f;
+                var multiplierStart = 1f - multiplierRange;
+                multiplierRange *= 2f;
+                var distributionList = new double[e.Coefficient.Count];
+                for (int i = 0; i < e.Coefficient.Count; i++)
+                {
+                    if (!e.Coefficient[i])
+                    {
+                        continue;
+                    }
+
+                    var multiplier = w.Wfc.Random.NextDouble() * multiplierRange + multiplierStart;
+                    var frequency = w.Wfc.Patterns[i].NormalizedFrequency * multiplier;
+                    distributionList[i] = frequency;
+                    sum += frequency;
+                }
+
+                // Random Double in range (0,sum)
+                var r = w.Wfc.Random.NextDouble() * sum;
+                var accumulator = 0d;
+                for (int i = 0; i < distributionList.Length; i++)
+                {
+                    accumulator += distributionList[i];
+
+                    if (accumulator >= r)
+                    {
+                        return i;
+                    }
+                }
+
+                // throw new InvalidOperationException($"Failed to select pattern for {string.Join(",", e.Pos.Value)}");
+                w.Wfc.Logger?.Invoke($"Failed to select pattern for {string.Join(",", e.Pos.Value)}");
+                return -1;
             }
 
             public static int PatternMaxEntropy(Wave w, Element e)

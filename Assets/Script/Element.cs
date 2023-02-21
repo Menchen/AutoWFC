@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using Newtonsoft.Json;
 using Script.Converters;
 using V = TypedArray<int>;
@@ -53,15 +52,19 @@ namespace WFC
                 }
             }
 
-            public bool Apply(Wave w, BitArray mask)
+            /**
+             * Apply mask to a element.
+             */
+            public void Apply(Wave w, BitArray mask)
             {
                 var diff = new BitArray(this.Coefficient).And(mask);
                 if (diff.GetCardinality() == 0)
                 {
-                    return true;
+                    // Mask is same as Coefficient, nothing to do.
+                    return;
                 }
 
-                this.Coefficient.And(mask);
+                Coefficient.And(mask);
 
                 for (int i = 0; i < Coefficient.Count; i++)
                 {
@@ -70,32 +73,30 @@ namespace WFC
                         continue;
                     }
 
-                    this.SumWeights -= w.Wfc.Patterns[i].NormalizedFrequency;
-                    this.Entropy -= w.Wfc.Patterns[i].Entropy;
+                    SumWeights -= w.Wfc.Patterns[i].NormalizedFrequency;
+                    Entropy -= w.Wfc.Patterns[i].Entropy;
                 }
 
-                // this.Entropy = Math.Log(this.SumWeights) - (this.SumWeightsLogWeights / this.SumWeights);
-                this.Popcnt = this.Coefficient.GetCardinality();
-                return this.Popcnt != 0;
+                Popcnt = Coefficient.GetCardinality();
             }
 
             public bool Collapse(int n, T value)
             {
-                if (!this.Coefficient[n])
+                if (!Coefficient[n])
                 {
                     return false;
                 }
 
-                this.Value = value;
-                this.Coefficient.SetAll(false);
-                this.Coefficient.Set(n, true);
-                this.Popcnt = 1;
-                this.SumWeights = 0.0d;
-                this.Entropy = 0.0d;
+                Value = value;
+                Coefficient.SetAll(false);
+                Coefficient.Set(n, true);
+                Popcnt = 1;
+                SumWeights = 0.0d;
+                Entropy = 0.0d;
                 return true;
             }
 
-            public bool Collapsed => this.Value is not null;
+            public bool Collapsed => Value is not null;
 
         }
     }

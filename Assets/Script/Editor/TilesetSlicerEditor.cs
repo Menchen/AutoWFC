@@ -1,16 +1,12 @@
-using System;
 using Script.Extensions;
 using UnityEditor;
-using UnityEditor.EditorTools;
 using UnityEngine;
 using UnityEngine.Tilemaps;
-using UnityEngine.UIElements;
-using WFC;
 
 namespace Script
 {
     [CustomEditor(typeof(TilesetSlicer))]
-    public class TilesetSlicerEditor : UnityEditor.Editor
+    public class TilesetSlicerEditor : Editor
     {
         // private BoundsInt selectionBounds;
         private Vector3Int? _p1, _p2;
@@ -211,7 +207,7 @@ namespace Script
             }
 
             GUILayout.EndHorizontal();
-            GUILayout.Label($"Editor Tools Label");
+            GUILayout.Label("Editor Tools Label");
         }
     }
 }

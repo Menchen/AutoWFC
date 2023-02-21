@@ -1,13 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 
 namespace Script.GenericUtils
 {
     public class Neibours2: INeibours
     {
         
-        public override IList<int[]> Neighbours => new int[][]
+        public override IList<int[]> Neighbours => new[]
         {
             new []{-1,0},
             new []{1,0},

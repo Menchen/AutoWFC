@@ -1,11 +1,13 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using UnityEditor;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 // Source : https://forum.unity.com/threads/what-is-a-serializable-asset-type-for-folder.608875/
 namespace Script
 {
-    [System.Serializable]
+    [Serializable]
     public class FolderReference
     {
         public string GUID;

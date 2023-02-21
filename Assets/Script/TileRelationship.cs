@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using UnityEngine;
-using UnityEngine.Tilemaps;
 
 namespace Script
 {
@@ -36,7 +33,7 @@ namespace Script
                     var hash = hashArray[TileUtils.MapIndex(x, y,pixelPerUnit)];
                     if (!result.TryGetValue(hash, out var relationship))
                     {
-                        relationship = new TileRelationship(){ Hash = hash};
+                        relationship = new TileRelationship { Hash = hash};
                     }
 
                     var neighbors = TileUtils.GetNeighbors(hashArray, x, y,maxX,maxY);

@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Reflection;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.XR;
-using Event = UnityEngine.Event;
 
 namespace Script
 {

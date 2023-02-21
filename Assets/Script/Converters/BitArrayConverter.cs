@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections;
-using System.Collections.Generic;
-using Newtonsoft.Json;
 using System.Linq;
+using Newtonsoft.Json;
 
 namespace Script.Converters
 {
@@ -19,7 +18,7 @@ namespace Script.Converters
             value.CopyTo(array, 0);
             var byteArray = PackBoolsInByteArray(array);
             // var nList = array.Select(e => e ? 1 : 0).ToArray();
-            serializer.Serialize(writer,new PackedBoolArray()
+            serializer.Serialize(writer,new PackedBoolArray
             {
                 Size = value.Count,
                 Data = byteArray,

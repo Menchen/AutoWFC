@@ -1,19 +1,14 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using Script.Converters;
 using Script.GenericUtils;
-using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.Tilemaps;
 using WFC;
-
+using Random = System.Random;
 
 namespace Script
 {
@@ -24,6 +19,9 @@ namespace Script
         public FolderReference folderReference;
         public BoundsInt? CurrentSelection;
         public Texture2D tileSet;
+
+        public WfcUtils<string>.SelectPattern.SelectPatternEnum selectPatternEnum;
+        public WfcUtils<string>.NextCell.NextCellEnum nextCellEnum;
 
         [FormerlySerializedAs("ColorScheme")] [SerializeField]
         private Style colorScheme;
@@ -45,8 +43,12 @@ namespace Script
             // var sprites = Resources.LoadAll<Sprite>(tileSet.name);
             // var lookup = sprites.GroupBy(HashSprite).ToDictionary(e => e.Key, e => e.First());
             var tileLookup = new Dictionary<string, TileBase>();
+            var isFolderReferenceValid = !string.IsNullOrEmpty(folderReference?.Path);
 
             var wfc = WfcUtils<string>.BuildFromJson(serializedJson);
+            wfc.NextCellEnum = nextCellEnum;
+            wfc.SelectPatternEnum = selectPatternEnum;
+            
             wfc.Logger += Debug.LogWarning;
             var outputVec = new[] { bounds.size.x, bounds.size.y };
             var offset = bounds.position;
@@ -55,14 +57,22 @@ namespace Script
             
             var tilemap = GetComponent<Tilemap>();
             var inputTiles = GetTilesFromTilemap(bounds, tilemap, out var inputVec);
-            var retry = 5;
-            string[] output = new string[] { };
+            var retry = 10;
+            string[] output = { };
             while (retry > 0)
             {
-                var colaped = wfc.Collapse(outputVec,out output,inputTiles);
-                if (colaped)
+                var colaped = false;
+                try
                 {
-                    break;
+                    colaped = wfc.Collapse(outputVec,out output,inputTiles);
+                    if (colaped)
+                    {
+                        break;
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
                 }
 
                 retry--;
@@ -70,7 +80,7 @@ namespace Script
 
             if (retry <= 0)
             {
-                Debug.Log($"Failed to WFC");
+                Debug.Log("Failed to WFC");
                 return;
             }
 
@@ -83,8 +93,9 @@ namespace Script
                 if (!tileLookup.ContainsKey(output[i]))
                 {
 #if UNITY_EDITOR
-                    tileLookup[output[i]] =
-                        AssetDatabase.LoadAssetAtPath<TileBase>(folderReference.Path + $"/{output[i]}.asset");
+                    tileLookup[output[i]] = isFolderReferenceValid ?
+                        AssetDatabase.LoadAssetAtPath<TileBase>(folderReference.Path + $"/{output[i]}.asset")
+                        : Resources.Load<Tile>(output[i]);
 #else
                     // Tiles must be inside of Resources folder
                     tileLookup[output[i]] = Resources.Load<Tile>(output[i]);
@@ -197,7 +208,7 @@ namespace Script
                 
             }
 
-            var wfc = new WfcUtils<string>(2,sizeInput,hashedSpriteInput,BorderBehavior.Wrap,new System.Random(DateTime.Now.Millisecond),new Neibours2(),null,WfcUtils<string>.NextCell.NextCellEnum.MinState,WfcUtils<string>.SelectPattern.SelectPatternEnum.PatternUniform);
+            var wfc = new WfcUtils<string>(2,sizeInput,hashedSpriteInput,BorderBehavior.Wrap,new Random(DateTime.Now.Millisecond),new Neibours2(),null,nextCellEnum,selectPatternEnum);
             serializedJson = wfc.SerializeToJson();
         }
         
@@ -206,7 +217,7 @@ namespace Script
             var input = GetTilesFromTilemap(boundsInt, GetComponent<Tilemap>(), out var inputVec);
             // var hashedSpriteInput = sprites.Select(HashSprite).ToArray();
 
-            var wfc = new WfcUtils<string>(2,inputVec,input,BorderBehavior.Wrap,new System.Random(DateTime.Now.Millisecond),new Neibours2(),null,WfcUtils<string>.NextCell.NextCellEnum.MinState,WfcUtils<string>.SelectPattern.SelectPatternEnum.PatternUniform);
+            var wfc = new WfcUtils<string>(2,inputVec,input,BorderBehavior.Wrap,new Random(DateTime.Now.Millisecond),new Neibours2(),null,WfcUtils<string>.NextCell.NextCellEnum.MinState,WfcUtils<string>.SelectPattern.SelectPatternEnum.PatternUniform);
             serializedJson = wfc.SerializeToJson();
         }
 

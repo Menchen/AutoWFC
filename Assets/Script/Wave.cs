@@ -21,7 +21,7 @@ namespace WFC
 
             public readonly T[] Preset;
 
-            public int NumCollapsed = 0;
+            public int NumCollapsed;
 
             public Wave(WfcUtils<T> wfc, V sizeWave, T[] preset)
             {
@@ -44,30 +44,30 @@ namespace WFC
                     throw new ZeroElementCoefficientException();
                 }
                 n ??= e.Popcnt <= 1
-                    ? e.Coefficient.FindFirstIndex(true)
-                    : e.Coefficient.FindRandomIndex(e.Popcnt, Wfc.Random, true);
+                    ? e.Coefficient.FindFirstIndex()
+                    : e.Coefficient.FindRandomIndex(e.Popcnt, Wfc.Random);
 
-                var p = this.Wfc.Patterns[n.Value];
+                var p = Wfc.Patterns[n.Value];
                 if (!e.Collapse(n.Value, p.Value))
                 {
                     Wfc.Logger?.Invoke($"Failed to collapse {string.Join(", ",e.Pos)}");
                     return e.Pos;
                 }
 
-                this.NumCollapsed++;
+                NumCollapsed++;
                 return null;
             }
 
             public V? Observe(Element e)
             {
-                var n = this.Wfc.PatternFn(this, e);
+                var n = Wfc.PatternFn(this, e);
                 if (n < 0)
                 {
                     Wfc.Logger?.Invoke($"Failed to observe {string.Join(", ",e.Pos)}");
                     return e.Pos;
                 }
 
-                return this.Collapse(e, n);
+                return Collapse(e, n);
             }
 
             public V? Propagate(Element toPropagate)
@@ -142,13 +142,13 @@ namespace WFC
                             if (newCount == 0)
                             {
                                 // zero popcount = contradiction
-                                this.Collapse(neighbourElement, 0);
+                                Collapse(neighbourElement, 0);
                                 contradiction = neighbourElement.Pos;
                                 Wfc.Logger?.Invoke($"Failed to converge (0 state) at {string.Join(", ",contradiction)}");
                             }
                             else if (newCount == 1)
                             {
-                                var res = this.Collapse(neighbourElement);
+                                var res = Collapse(neighbourElement);
                                 if (res is not null)
                                 {
                                     return res;
@@ -166,7 +166,7 @@ namespace WFC
                     return contradiction;
                 }
 
-                this.Wfc.OnPropagate?.Invoke(this);
+                Wfc.OnPropagate?.Invoke(this);
 
                 return null;
             }
@@ -175,9 +175,9 @@ namespace WFC
             public TypedArray<int>? Collapse()
             {
                 // Initialize the wave, all patterns are valid for each element
-                this.CurrentWave = new Element[this.SizeWaveLength];
+                CurrentWave = new Element[SizeWaveLength];
 
-                for (int i = 0; i < this.CurrentWave.Length; i++)
+                for (int i = 0; i < CurrentWave.Length; i++)
                 {
                     // wave[i] = new Element(this, this.Wfc.MaskUsed);
                     CurrentWave[i] = new Element
@@ -217,7 +217,7 @@ namespace WFC
                     }
                 }
 
-                while (NumCollapsed < this.CurrentWave.Length)
+                while (NumCollapsed < CurrentWave.Length)
                 {
                     var e = Wfc.NextCellFn(this);
 
