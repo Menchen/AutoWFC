@@ -152,7 +152,21 @@ namespace WFC
                 lookupTable[centerValue] = listArray;
             }
 
-            GeneratePatternFromLookUpTable(lookupTable, frequencyTable);
+            var usedMask = new HashSet<T>();
+            for (int x = 1; x < sizeInput[0]-1; x++)
+            {
+                for (int y = 1; y < sizeInput[1]-1; y++)
+                {
+                    var index = ArrayUtils.RavelIndex(sizeInput, new[] { x, y });
+                    if (index is null)
+                    {
+                        continue;
+                    }
+
+                    usedMask.Add(input[index.Value]);
+                }
+            }
+            GeneratePatternFromLookUpTable(lookupTable, frequencyTable,usedMask);
         }
 
         public void LearnNewPattern(V sizeInput, T[] input)
@@ -196,8 +210,24 @@ namespace WFC
                 frequencyTable[centerValue] = frequencyTable.GetValueOrDefault(centerValue) + 1;
                 lookupTable[centerValue] = listArray;
             }
+            
+            var usedMask = MaskUsed.IterateWithIndex().Where(tuple => tuple.Item1)
+                .Select(tuple => Patterns[tuple.Item2].Value).ToHashSet();
+            for (int x = 1; x < sizeInput[0]-1; x++)
+            {
+                for (int y = 1; y < sizeInput[1]-1; y++)
+                {
+                    var index = ArrayUtils.RavelIndex(sizeInput, new[] { x, y });
+                    if (index is null)
+                    {
+                        continue;
+                    }
 
-            GeneratePatternFromLookUpTable(lookupTable, frequencyTable);
+                    usedMask.Add(input[index.Value]);
+                }
+            }
+
+            GeneratePatternFromLookUpTable(lookupTable, frequencyTable,usedMask);
         }
 
         public void UnLearnPattern(V sizeInput, T[] input)
@@ -214,6 +244,22 @@ namespace WFC
             }).ToArray());
 
             var frequencyTable = Patterns.ToDictionary(e => e.Value, e => e.Frequency);
+            
+            var usedMask = MaskUsed.IterateWithIndex().Where(tuple => tuple.Item1)
+                .Select(tuple => Patterns[tuple.Item2].Value).ToHashSet();
+            for (int x = 1; x < sizeInput[0]-1; x++)
+            {
+                for (int y = 1; y < sizeInput[1]-1; y++)
+                {
+                    var index = ArrayUtils.RavelIndex(sizeInput, new[] { x, y });
+                    if (index is null)
+                    {
+                        continue;
+                    }
+
+                    usedMask.Add(input[index.Value]);
+                }
+            }
 
             for (int i = 0; i < sizeInputLength; i++)
             {
@@ -246,11 +292,11 @@ namespace WFC
                 lookupTable[centerValue] = listArray;
             }
 
-            GeneratePatternFromLookUpTable(lookupTable, frequencyTable);
+            GeneratePatternFromLookUpTable(lookupTable, frequencyTable,usedMask);
         }
 
         private void GeneratePatternFromLookUpTable(Dictionary<T, HashSet<T>[]> lookupTable,
-            Dictionary<T, int> frequencyTable)
+            Dictionary<T, int> frequencyTable,HashSet<T> usedMask)
         {
             // Remove Null/Empty state
             lookupTable = lookupTable.Where(e => !Equals(e.Key, EmptyState)).ToDictionary(e => e.Key,
@@ -263,7 +309,7 @@ namespace WFC
             // Populate Patterns Ids
             var id = 0;
             var patternsDict = new Dictionary<T, Pattern>();
-            MaskUsed = new BitArray(lookupTable.Count);
+            MaskUsed = new BitArray(lookupTable.Count,false);
             BITSetSize = lookupTable.Count;
             var totalFrequency = (double)frequencyTable.Values.Aggregate((a, b) => a + b);
             foreach (var kvPair in lookupTable)
@@ -277,7 +323,10 @@ namespace WFC
                     NormalizedFrequency = frequencyTable.GetValueOrDefault(kvPair.Key) / totalFrequency
                 };
 
-                MaskUsed.Set(id, true);
+                if (usedMask.Contains(kvPair.Key))
+                {
+                    MaskUsed.Set(id, true);
+                }
                 id++;
             }
 
