@@ -64,11 +64,12 @@ namespace WFC
                     return;
                 }
 
-                Coefficient.And(mask);
+                // Get Bit's that was invalidated by our mask
+                diff.And(Coefficient);
 
-                for (int i = 0; i < Coefficient.Count; i++)
+                for (int i = 0; i < diff.Count; i++)
                 {
-                    if (!Coefficient[i])
+                    if (!diff[i])
                     {
                         continue;
                     }
@@ -77,6 +78,7 @@ namespace WFC
                     Entropy -= w.Wfc.Patterns[i].Entropy;
                 }
 
+                Coefficient.And(mask);
                 Popcnt = Coefficient.GetCardinality();
             }
 
