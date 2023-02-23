@@ -325,6 +325,8 @@ namespace WFC
             {
                 MinState,
                 MaxEntropy,
+                MinEntropy,
+                MinStateEntropyWeighted,
             }
 
             public static Func<Wave, Element> GetNextCellFn(NextCellEnum w)
@@ -335,6 +337,10 @@ namespace WFC
                         return MinState;
                     case NextCellEnum.MaxEntropy:
                         return MaxEntropy;
+                    case NextCellEnum.MinEntropy:
+                        return MinEntropy;
+                    case NextCellEnum.MinStateEntropyWeighted:
+                        return MinStateEntropyWeighted;
                 }
 
                 return null;
@@ -350,6 +356,63 @@ namespace WFC
                     {
                         minElement = element;
                         minValue = element.Popcnt;
+                    }
+                }
+
+                if (minElement is null)
+                {
+                    throw new InvalidOperationException("Failed to find Next Cell/Converge");
+                }
+
+                return minElement;
+            }
+            
+            public static Element MinStateEntropyWeighted(Wave w)
+            {
+                var localMinValue = double.MaxValue;
+                Element minElement = null;
+                var multiplierRange = w.Wfc.MutationMultiplier * 0.05f;
+                var multiplierStart = 1f - multiplierRange;
+                multiplierRange *= 2f;
+                foreach (var element in w.CurrentWave)
+                {
+                    if (element.Collapsed)
+                    {
+                        continue;
+                    }
+                    var mutatedStateEntropyWeighted = element.Popcnt * element.Entropy * (w.Wfc.Random.NextDouble() * multiplierRange + multiplierStart);
+                    if (mutatedStateEntropyWeighted < localMinValue)
+                    {
+                        minElement = element;
+                        localMinValue = mutatedStateEntropyWeighted;
+                    }
+                }
+
+                if (minElement is null)
+                {
+                    throw new InvalidOperationException("Failed to find Next Cell/Converge");
+                }
+
+                return minElement;
+            }
+            public static Element MinEntropy(Wave w)
+            {
+                var localMinValue = double.MaxValue;
+                Element minElement = null;
+                var multiplierRange = w.Wfc.MutationMultiplier * 0.25f;
+                var multiplierStart = 1f - multiplierRange;
+                multiplierRange *= 2f;
+                foreach (var element in w.CurrentWave)
+                {
+                    if (element.Collapsed)
+                    {
+                        continue;
+                    }
+                    var mutatedEntropy = element.Entropy * (w.Wfc.Random.NextDouble() * multiplierRange + multiplierStart);
+                    if (mutatedEntropy < localMinValue)
+                    {
+                        minElement = element;
+                        localMinValue = mutatedEntropy;
                     }
                 }
 
