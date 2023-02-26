@@ -125,10 +125,12 @@ namespace WFC
             var lookupTable = new Dictionary<T, HashSet<T>[]>();
             var frequencyTable = new Dictionary<T, int>();
 
+            var usedMask = new HashSet<T>();
             for (int i = 0; i < sizeInputLength; i++)
             {
                 var index = ArrayUtils.UnRavelIndex(sizeInput, i);
                 var centerValue = input[i];
+                var usedFlag = true;
                 if (centerValue is null || Equals(emptyState, centerValue))
                 {
                     continue;
@@ -144,28 +146,30 @@ namespace WFC
                         var pos = ArrayUtils.RavelIndex(sizeInput, offset)!.Value;
                         var value = input[pos];
 
-                        listArray[j].Add(value);
+                        if (Equals(EmptyState,value))
+                        {
+                            usedFlag = false;
+                        }
+                        else
+                        {
+                            listArray[j].Add(value);
+                        }
                     }
+                    else
+                    {
+                        usedFlag = false;
+                    }
+                }
+
+                if (usedFlag)
+                {
+                    usedMask.Add(centerValue);
                 }
 
                 frequencyTable[centerValue] = frequencyTable.GetValueOrDefault(centerValue) + 1;
                 lookupTable[centerValue] = listArray;
             }
 
-            var usedMask = new HashSet<T>();
-            for (int x = 1; x < sizeInput[0]-1; x++)
-            {
-                for (int y = 1; y < sizeInput[1]-1; y++)
-                {
-                    var index = ArrayUtils.RavelIndex(sizeInput, new[] { x, y });
-                    if (index is null)
-                    {
-                        continue;
-                    }
-
-                    usedMask.Add(input[index.Value]);
-                }
-            }
             GeneratePatternFromLookUpTable(lookupTable, frequencyTable,usedMask);
         }
 
@@ -184,11 +188,14 @@ namespace WFC
 
             var frequencyTable = Patterns.ToDictionary(e => e.Value, e => e.Frequency);
 
+            var usedMask = MaskUsed.IterateWithIndex().Where(tuple => tuple.Item1)
+                .Select(tuple => Patterns[tuple.Item2].Value).ToHashSet();
             for (int i = 0; i < sizeInputLength; i++)
             {
                 var index = ArrayUtils.UnRavelIndex(sizeInput, i);
                 var centerValue = input[i];
-                if (centerValue is null)
+                var usedFlag = true;
+                if (centerValue is null || Equals(EmptyState,centerValue))
                 {
                     continue;
                 }
@@ -203,30 +210,30 @@ namespace WFC
                         var pos = ArrayUtils.RavelIndex(sizeInput, offset)!.Value;
                         var value = input[pos];
 
-                        listArray[j].Add(value);
+                        if (Equals(value,EmptyState))
+                        {
+                            usedFlag = false;
+                        }
+                        else
+                        {
+                            listArray[j].Add(value);
+                        }
+                    }
+                    else
+                    {
+                        usedFlag = false;
                     }
                 }
 
+                if (usedFlag)
+                {
+                    // Only pattern with all valid neighbours are set as 'valid'
+                    usedMask.Add(centerValue);
+                }
                 frequencyTable[centerValue] = frequencyTable.GetValueOrDefault(centerValue) + 1;
                 lookupTable[centerValue] = listArray;
             }
             
-            var usedMask = MaskUsed.IterateWithIndex().Where(tuple => tuple.Item1)
-                .Select(tuple => Patterns[tuple.Item2].Value).ToHashSet();
-            for (int x = 1; x < sizeInput[0]-1; x++)
-            {
-                for (int y = 1; y < sizeInput[1]-1; y++)
-                {
-                    var index = ArrayUtils.RavelIndex(sizeInput, new[] { x, y });
-                    if (index is null)
-                    {
-                        continue;
-                    }
-
-                    usedMask.Add(input[index.Value]);
-                }
-            }
-
             GeneratePatternFromLookUpTable(lookupTable, frequencyTable,usedMask);
         }
 
@@ -510,6 +517,7 @@ namespace WFC
                 PatternUniform,
                 PatternFrequencyWeighted,
                 PatternMaxEntropy,
+                PatternMinEntropy,
             }
 
             public static Func<Wave, Element, int> GetPatternFn(SelectPatternEnum w)
@@ -524,6 +532,8 @@ namespace WFC
                         return PatternFrequencyWeighted;
                     case SelectPatternEnum.PatternMaxEntropy:
                         return PatternMaxEntropy;
+                    case SelectPatternEnum.PatternMinEntropy:
+                        return PatternMinEntropy;
                 }
 
                 return null;
@@ -566,6 +576,27 @@ namespace WFC
                 w.Wfc.Logger?.Invoke($"Failed to select pattern for {string.Join(",", e.Pos.Value)}");
                 return -1;
             }
+            public static int PatternMinEntropy(Wave w, Element e)
+            {
+                var multiplierRange = w.Wfc.MutationMultiplier * 0.25f;
+                var multiplierStart = 1f - multiplierRange;
+                multiplierRange *= 2f;
+                var min = e.Coefficient.IterateWithIndex().Select(validState =>
+                        (validState.Item2,
+                            validState.Item1
+                                ? w.Wfc.Patterns[validState.Item2].Entropy *
+                                  (w.Wfc.Random.NextDouble() * multiplierRange + multiplierStart) // Mutation multiplier
+                                : double.MaxValue))
+                    .Aggregate((x, acc) => x.Item2 < acc.Item2 ? x : acc);
+
+                var returnValue = e.Coefficient[min.Item1] ? min.Item1 : -1;
+                if (returnValue < 0)
+                {
+                    w.Wfc.Logger?.Invoke($"Failed to select pattern for {string.Join(",", e.Pos.Value)}");
+                }
+
+                return returnValue;
+            }
 
             public static int PatternMaxEntropy(Wave w, Element e)
             {
@@ -577,7 +608,7 @@ namespace WFC
                             validState.Item1
                                 ? w.Wfc.Patterns[validState.Item2].Entropy *
                                   (w.Wfc.Random.NextDouble() * multiplierRange + multiplierStart) // Mutation multiplier
-                                : 0))
+                                : double.MinValue))
                     .Aggregate((x, acc) => x.Item2 > acc.Item2 ? x : acc);
 
                 var returnValue = e.Coefficient[max.Item1] ? max.Item1 : -1;
