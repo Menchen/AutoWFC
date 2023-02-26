@@ -38,6 +38,79 @@ namespace Script
             [FormerlySerializedAs("SelectColor")] public Color selectColor = new Color(255/255f, 165/255f, 0f);
         }
 
+        public void ApplyWfc(string[] wfc, BoundsInt bounds)
+        {
+            // var sprites = Resources.LoadAll<Sprite>(tileSet.name);
+            // var lookup = sprites.GroupBy(HashSprite).ToDictionary(e => e.Key, e => e.First());
+            var tileLookup = new Dictionary<string, TileBase>();
+            var isFolderReferenceValid = !string.IsNullOrEmpty(folderReference?.Path);
+
+            var outputVec = new[] { bounds.size.x, bounds.size.y };
+            var offset = bounds.position;
+            
+            
+            
+            var tilemap = GetComponent<Tilemap>();
+            for (int i = 0; i < wfc.Length; i++)
+            {
+                var pos = ArrayUtils.UnRavelIndex(outputVec, i);
+                if (!tileLookup.ContainsKey(wfc[i]))
+                {
+#if UNITY_EDITOR
+                    tileLookup[wfc[i]] = isFolderReferenceValid ?
+                        AssetDatabase.LoadAssetAtPath<TileBase>(folderReference.Path + $"/{wfc[i]}.asset")
+                        : Resources.Load<Tile>(wfc[i]);
+#else
+                    // Tiles must be inside of Resources folder
+                    tileLookup[output[i]] = Resources.Load<Tile>(output[i]);
+#endif
+                }
+                var tile = tileLookup[wfc[i]];
+                
+                // tile.sprite = output[i] is null ? null : lookup[output[i]];
+                var unityIndex = ToUnityIndex(pos[0], pos[1], outputVec[0], outputVec[1]);
+                // tilemap.SetEditorPreviewTile(offset+new Vector3Int(unityIndex.x, unityIndex.y), tile);
+                
+                // Use SetTiles ? Seems more efficient.
+                tilemap.SetTile(offset+new Vector3Int(unityIndex.x, unityIndex.y), tile);
+            }
+
+        }
+
+        public string[] GenerateWfc(BoundsInt bounds)
+        {
+            var wfc = WfcUtils<string>.BuildFromJson(serializedJson);
+            wfc.NextCellEnum = nextCellEnum;
+            wfc.SelectPatternEnum = selectPatternEnum;
+            
+            wfc.Logger += Debug.LogWarning;
+            var outputVec = new[] { bounds.size.x, bounds.size.y };
+            
+            var tilemap = GetComponent<Tilemap>();
+            var inputTiles = GetTilesFromTilemap(bounds, tilemap, out var inputVec);
+            var retry = 10;
+            while (retry > 0)
+            {
+                try
+                {
+                    var collapsed = wfc.Collapse(outputVec,out var output,inputTiles);
+                    if (collapsed)
+                    {
+                        return output;
+                    }
+                }
+                catch (Exception e)
+                {
+                    // Debug.Log(e);
+                }
+
+                retry--;
+            }
+
+            Debug.Log("Failed to WFC");
+            return null;
+        }
+
         public void WfcWithJson(BoundsInt bounds)
         {
             // var sprites = Resources.LoadAll<Sprite>(tileSet.name);
