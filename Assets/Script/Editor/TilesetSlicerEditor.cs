@@ -43,22 +43,26 @@ namespace Script
                         _p2 = null;
                         GUIUtility.hotControl = id;
                         Event.current.Use();
+                        Repaint(); // Refresh inspector for button disable/enable 
                     }
 
                     break;
                 case SelectState.Drag:
                     if (Event.current.type == EventType.MouseDrag)
                     {
+                        // GUIUtility.hotControl = id;
                         Event.current.Use();
                     }
                     else if (Event.current.type is EventType.MouseMove or EventType.MouseUp &&
                              Event.current.button == 0)
                     {
+                        // Create Bounds
                         _selectState = SelectState.None;
                         _p2 = local;
                         _targetTilesetSlicer.CurrentSelection = _p1!.Value.BoundsIntFrom2Points(_p2.Value);
                         Event.current.Use();
                         GUIUtility.hotControl = 0;
+                        Repaint(); // Refresh inspector for button disable/enable 
                     }
 
                     break;
@@ -132,33 +136,44 @@ namespace Script
             // SelectionActive = GridSelection.active;
             TilesetSlicer slicer = (TilesetSlicer)target;
             // GridEditorUtility.
-            GUILayout.BeginHorizontal();
             if (GUILayout.Button("Create new pattern From tileset"))
             {
                 slicer.CreateWfcFromTileSet();
             }
 
-            var oldEnabled = GUI.enabled;
-            GUI.enabled = _p1 is not null && _p2 is not null;
-            if (GUILayout.Button("Create new pattern from selection"))
+            using (new EditorGUI.DisabledScope(slicer.CurrentSelection is null))
             {
-                slicer.CreateFromSelection(slicer.CurrentSelection.Value);
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("Create new pattern from selection"))
+                {
+                    slicer.CreateFromSelection(slicer.CurrentSelection!.Value);
+                }
+                GUILayout.EndHorizontal();
             }
 
-            GUILayout.EndHorizontal();
-            GUILayout.BeginHorizontal();
 
-            GUI.enabled = !string.IsNullOrEmpty(slicer.serializedJson) && _p1 is not null && _p2 is not null;
-            var clickedGenerateRegion = GUILayout.Button("GenerateWithJson");
-            var clickSetToEmpty = GUILayout.Button("SetToEmpty");
-            GUILayout.EndHorizontal();
-            GUILayout.BeginHorizontal();
-            var clickTrainFromSelection = GUILayout.Button("TrainFromSelection");
-            GUI.enabled = GUI.enabled && slicer.CurrentSelection?.size.sqrMagnitude == 6; // 2x1 Selection
-            var clickUnlearnFromSelection = GUILayout.Button("UnLearnFromSelection");
-            GUI.enabled = oldEnabled;
+            // GUI.enabled = ;
+            bool clickedGenerateRegion;
+            bool clickSetToEmpty;
+            bool clickTrainFromSelection;
+            bool clickUnlearnFromSelection;
+            using (new EditorGUI.DisabledScope(string.IsNullOrEmpty(slicer.serializedJson) || slicer.CurrentSelection is null))
+            {
+                GUILayout.BeginHorizontal();
+                clickedGenerateRegion = GUILayout.Button("GenerateWithJson");
+                clickSetToEmpty = GUILayout.Button("SetToEmpty");
+                GUILayout.EndHorizontal();
+                GUILayout.BeginHorizontal();
+                clickTrainFromSelection = GUILayout.Button("TrainFromSelection");
+                using (new EditorGUI.DisabledScope(!GUI.enabled || slicer.CurrentSelection?.size.sqrMagnitude != 6))
+                {
+                    clickUnlearnFromSelection = GUILayout.Button("UnLearnFromSelection");
+                }
+            }
+
             if (clickTrainFromSelection)
             {
+                Undo.RecordObject(slicer,"Learn pattern");
                 slicer.LearnPatternFromRegion(slicer.CurrentSelection.Value);
             }
 
@@ -169,19 +184,26 @@ namespace Script
 
             if (clickedGenerateRegion)
             {
-                slicer.WfcWithJson(_p1!.Value.BoundsIntFrom2Points(_p2!.Value));
+                var generatedWfc = slicer.GenerateWfc(slicer.CurrentSelection!.Value);
+                if (generatedWfc is not null)
+                {
+                    // Use RegisterCompleteObjectUndo instead of RecordObject for tilemap,
+                    // because it's faster to replace the object instead of tracking the changes.
+                    Undo.RegisterCompleteObjectUndo(_tilemap,"WFC Tilemap");
+                    slicer.ApplyWfc(generatedWfc,slicer.CurrentSelection!.Value);
+                }
             }
 
             if (clickSetToEmpty)
             {
-                var tilemap = slicer.GetComponent<Tilemap>();
-                tilemap.BoxFill(slicer.CurrentSelection.Value.position, null, 0, 0,
+                Undo.RegisterCompleteObjectUndo(_tilemap,"Tilemap set empty");
+                _tilemap.BoxFill(slicer.CurrentSelection!.Value.position, null, 0, 0,
                     slicer.CurrentSelection.Value.size.x, slicer.CurrentSelection.Value.size.y);
                 for (int x = 0; x < slicer.CurrentSelection.Value.size.x; x++)
                 {
                     for (int y = 0; y < slicer.CurrentSelection.Value.size.y; y++)
                     {
-                        tilemap.SetTile(slicer.CurrentSelection.Value.position + new Vector3Int(x, y, 0), null);
+                        _tilemap.SetTile(slicer.CurrentSelection.Value.position + new Vector3Int(x, y, 0), null);
                     }
                 }
             }
