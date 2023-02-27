@@ -212,11 +212,16 @@ namespace Script
                 }
             }
 
+            // Disable selection if another Tool is selected
+            if (Tools.current != Tool.None)
+            {
+                _selectActive = false;
+            }
+
             _selectActive = GUILayout.Toggle(_selectActive, "Select");
             _editorMode = _selectActive ? EditorMode.Select : EditorMode.None;
             if (_selectActive)
             {
-                // _selectActive = !_selectActive;
                 _editorMode = _selectActive ? EditorMode.Select : EditorMode.None;
                 if (_selectActive)
                 {
@@ -226,7 +231,6 @@ namespace Script
                 }
                 else
                 {
-                    // TODO Add listener for external tools change
                     Tools.current = _lastTool;
                     Tools.hidden = false;
                 }
@@ -235,5 +239,6 @@ namespace Script
             GUILayout.EndHorizontal();
             GUILayout.Label("Editor Tools Label");
         }
+
     }
 }
