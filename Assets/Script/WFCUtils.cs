@@ -23,7 +23,14 @@ namespace WFC
         // [JsonProperty] public int PatternSize { get; private set; }
         [JsonProperty] public int BITSetSize { get; private set; }
 
-        [JsonProperty] public float MutationMultiplier { get; set; }
+        [JsonIgnore] private float _mutationMultiplier;
+
+        [JsonProperty]
+        public float MutationMultiplier
+        {
+            get => _mutationMultiplier;
+            set => _mutationMultiplier = (value > 1 ? 1 : value) < 0 ? 0 : value;
+        }
 
         // public int Vol => Convert.ToInt32(Math.Pow(PatternSize, Dimension));
 
@@ -47,9 +54,8 @@ namespace WFC
                 PatternFn = SelectPattern.GetPatternFn(value);
             }
         }
-        
-        [JsonIgnore]
-        private SelectPattern.SelectPatternEnum _selectPatternEnum;
+
+        [JsonIgnore] private SelectPattern.SelectPatternEnum _selectPatternEnum;
 
         [JsonProperty]
         public NextCell.NextCellEnum NextCellEnum
@@ -62,8 +68,7 @@ namespace WFC
             }
         }
 
-        [JsonIgnore]
-        private NextCell.NextCellEnum _nextCellEnum;
+        [JsonIgnore] private NextCell.NextCellEnum _nextCellEnum;
 
         [JsonIgnore] public Func<Wave, Element, int> PatternFn;
 
@@ -79,7 +84,8 @@ namespace WFC
 
         [JsonIgnore] public Dictionary<T, int> PatternLookUp;
 
-        [JsonIgnore] public Dictionary<string, object> Context = new(); // Used by external function e.g PatternFn & NextCellFn
+        [JsonIgnore]
+        public Dictionary<string, object> Context = new(); // Used by external function e.g PatternFn & NextCellFn
 
 
         public static WfcUtils<T> BuildFromJson(string json)
@@ -146,7 +152,7 @@ namespace WFC
                         var pos = ArrayUtils.RavelIndex(sizeInput, offset)!.Value;
                         var value = input[pos];
 
-                        if (Equals(EmptyState,value))
+                        if (Equals(EmptyState, value))
                         {
                             usedFlag = false;
                         }
@@ -170,7 +176,7 @@ namespace WFC
                 lookupTable[centerValue] = listArray;
             }
 
-            GeneratePatternFromLookUpTable(lookupTable, frequencyTable,usedMask);
+            GeneratePatternFromLookUpTable(lookupTable, frequencyTable, usedMask);
         }
 
         public void LearnNewPattern(V sizeInput, T[] input)
@@ -195,7 +201,7 @@ namespace WFC
                 var index = ArrayUtils.UnRavelIndex(sizeInput, i);
                 var centerValue = input[i];
                 var usedFlag = true;
-                if (centerValue is null || Equals(EmptyState,centerValue))
+                if (centerValue is null || Equals(EmptyState, centerValue))
                 {
                     continue;
                 }
@@ -210,7 +216,7 @@ namespace WFC
                         var pos = ArrayUtils.RavelIndex(sizeInput, offset)!.Value;
                         var value = input[pos];
 
-                        if (Equals(value,EmptyState))
+                        if (Equals(value, EmptyState))
                         {
                             usedFlag = false;
                         }
@@ -230,11 +236,12 @@ namespace WFC
                     // Only pattern with all valid neighbours are set as 'valid'
                     usedMask.Add(centerValue);
                 }
+
                 frequencyTable[centerValue] = frequencyTable.GetValueOrDefault(centerValue) + 1;
                 lookupTable[centerValue] = listArray;
             }
-            
-            GeneratePatternFromLookUpTable(lookupTable, frequencyTable,usedMask);
+
+            GeneratePatternFromLookUpTable(lookupTable, frequencyTable, usedMask);
         }
 
         public void UnLearnPattern(V sizeInput, T[] input)
@@ -251,12 +258,12 @@ namespace WFC
             }).ToArray());
 
             var frequencyTable = Patterns.ToDictionary(e => e.Value, e => e.Frequency);
-            
+
             var usedMask = MaskUsed.IterateWithIndex().Where(tuple => tuple.Item1)
                 .Select(tuple => Patterns[tuple.Item2].Value).ToHashSet();
-            for (int x = 1; x < sizeInput[0]-1; x++)
+            for (int x = 1; x < sizeInput[0] - 1; x++)
             {
-                for (int y = 1; y < sizeInput[1]-1; y++)
+                for (int y = 1; y < sizeInput[1] - 1; y++)
                 {
                     var index = ArrayUtils.RavelIndex(sizeInput, new[] { x, y });
                     if (index is null)
@@ -299,11 +306,11 @@ namespace WFC
                 lookupTable[centerValue] = listArray;
             }
 
-            GeneratePatternFromLookUpTable(lookupTable, frequencyTable,usedMask);
+            GeneratePatternFromLookUpTable(lookupTable, frequencyTable, usedMask);
         }
 
         private void GeneratePatternFromLookUpTable(Dictionary<T, HashSet<T>[]> lookupTable,
-            Dictionary<T, int> frequencyTable,HashSet<T> usedMask)
+            Dictionary<T, int> frequencyTable, HashSet<T> usedMask)
         {
             // Remove Null/Empty state
             lookupTable = lookupTable.Where(e => !Equals(e.Key, EmptyState)).ToDictionary(e => e.Key,
@@ -316,9 +323,10 @@ namespace WFC
             // Populate Patterns Ids
             var id = 0;
             var patternsDict = new Dictionary<T, Pattern>();
-            MaskUsed = new BitArray(lookupTable.Count,false);
+            MaskUsed = new BitArray(lookupTable.Count, false);
             BITSetSize = lookupTable.Count;
             var totalFrequency = (double)frequencyTable.Values.Aggregate((a, b) => a + b);
+            var sumEntropy = 0d;
             foreach (var kvPair in lookupTable)
             {
                 patternsDict[kvPair.Key] = new Pattern
@@ -329,13 +337,21 @@ namespace WFC
                     Frequency = frequencyTable.GetValueOrDefault(kvPair.Key),
                     NormalizedFrequency = frequencyTable.GetValueOrDefault(kvPair.Key) / totalFrequency
                 };
+                sumEntropy += patternsDict[kvPair.Key].Entropy;
 
                 if (usedMask.Contains(kvPair.Key))
                 {
                     MaskUsed.Set(id, true);
                 }
+
                 id++;
             }
+
+            foreach (var pattern in patternsDict.Values)
+            {
+                pattern.RemainingEntropy = sumEntropy - pattern.Entropy;
+            }
+
 
             // Assign valid bits
             foreach (var kvPair in lookupTable)

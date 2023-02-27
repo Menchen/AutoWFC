@@ -19,6 +19,9 @@ namespace Script
         public FolderReference folderReference;
         public BoundsInt? CurrentSelection;
         public Texture2D tileSet;
+        
+        [Range(0f,1f)]
+        public float mutation = 1f;
 
         public WfcUtils<string>.SelectPattern.SelectPatternEnum selectPatternEnum;
         public WfcUtils<string>.NextCell.NextCellEnum nextCellEnum;
@@ -82,6 +85,7 @@ namespace Script
             var wfc = WfcUtils<string>.BuildFromJson(serializedJson);
             wfc.NextCellEnum = nextCellEnum;
             wfc.SelectPatternEnum = selectPatternEnum;
+            wfc.MutationMultiplier = mutation;
             
             wfc.Logger += Debug.LogWarning;
             var outputVec = new[] { bounds.size.x, bounds.size.y };
