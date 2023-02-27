@@ -21,6 +21,8 @@ namespace WFC
 
             [JsonIgnore] public double InverseEntropy => _cachedInverseEntropy ??= 1d / Entropy;
 
+            public double RemainingEntropy;
+
             public T Value { get; set; }
             // public T[] Data { get; set; }
 

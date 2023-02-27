@@ -253,7 +253,7 @@ namespace WFC
                 var max = e.Coefficient.IterateWithIndex().Select(validState =>
                         (validState.Item2,
                             validState.Item1
-                                ? w.Wfc.Patterns[validState.Item2].Entropy *
+                                ? w.Wfc.Patterns[validState.Item2].RemainingEntropy *
                                   (w.Wfc.Random.NextDouble() * multiplierRange + multiplierStart) // Mutation multiplier
                                 : double.MinValue))
                     .Aggregate((x, acc) => x.Item2 > acc.Item2 ? x : acc);
