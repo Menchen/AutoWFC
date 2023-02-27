@@ -19,6 +19,8 @@ namespace WFC
             [JsonIgnore]
             public double Entropy => _cachedEntropy ??= -NormalizedFrequency * Math.Log(NormalizedFrequency, 2);
 
+            [JsonIgnore] public double InverseEntropy => _cachedInverseEntropy ??= 1d / Entropy;
+
             public T Value { get; set; }
             // public T[] Data { get; set; }
 
@@ -26,6 +28,7 @@ namespace WFC
             public BitArray[] Valid { get; set; }
 
             [JsonIgnore] private double? _cachedEntropy;
+            [JsonIgnore] private double? _cachedInverseEntropy;
 
             [JsonIgnore] private int? _cachedHash;
 

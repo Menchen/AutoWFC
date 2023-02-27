@@ -60,8 +60,8 @@ namespace Script
                         _selectState = SelectState.None;
                         _p2 = local;
                         _targetTilesetSlicer.CurrentSelection = _p1!.Value.BoundsIntFrom2Points(_p2.Value);
-                        Event.current.Use();
                         GUIUtility.hotControl = 0;
+                        Event.current.Use();
                         Repaint(); // Refresh inspector for button disable/enable 
                     }
 
@@ -138,6 +138,7 @@ namespace Script
             // GridEditorUtility.
             if (GUILayout.Button("Create new pattern From tileset"))
             {
+                Undo.RecordObject(slicer,"Create new pattern from selection");
                 slicer.CreateWfcFromTileSet();
             }
 
@@ -146,6 +147,7 @@ namespace Script
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button("Create new pattern from selection"))
                 {
+                    Undo.RecordObject(slicer,"Create new pattern from selection");
                     slicer.CreateFromSelection(slicer.CurrentSelection!.Value);
                 }
                 GUILayout.EndHorizontal();
@@ -174,12 +176,13 @@ namespace Script
             if (clickTrainFromSelection)
             {
                 Undo.RecordObject(slicer,"Learn pattern");
-                slicer.LearnPatternFromRegion(slicer.CurrentSelection.Value);
+                slicer.LearnPatternFromRegion(slicer.CurrentSelection!.Value);
             }
 
             if (clickUnlearnFromSelection)
             {
-                slicer.UnLearnPatternFromRegion(slicer.CurrentSelection.Value);
+                Undo.RecordObject(slicer,"Unlearn pattern");
+                slicer.UnLearnPatternFromRegion(slicer.CurrentSelection!.Value);
             }
 
             if (clickedGenerateRegion)
@@ -191,15 +194,16 @@ namespace Script
                     // because it's faster to replace the object instead of tracking the changes.
                     Undo.RegisterCompleteObjectUndo(_tilemap,"WFC Tilemap");
                     slicer.ApplyWfc(generatedWfc,slicer.CurrentSelection!.Value);
+                    EditorUtility.SetDirty(_tilemap);
                 }
             }
 
             if (clickSetToEmpty)
             {
                 Undo.RegisterCompleteObjectUndo(_tilemap,"Tilemap set empty");
-                _tilemap.BoxFill(slicer.CurrentSelection!.Value.position, null, 0, 0,
-                    slicer.CurrentSelection.Value.size.x, slicer.CurrentSelection.Value.size.y);
-                for (int x = 0; x < slicer.CurrentSelection.Value.size.x; x++)
+                // _tilemap.BoxFill(slicer.CurrentSelection!.Value.position, null, 0, 0,
+                //     slicer.CurrentSelection.Value.size.x, slicer.CurrentSelection.Value.size.y);
+                for (int x = 0; x < slicer.CurrentSelection!.Value.size.x; x++)
                 {
                     for (int y = 0; y < slicer.CurrentSelection.Value.size.y; y++)
                     {

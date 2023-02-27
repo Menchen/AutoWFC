@@ -101,7 +101,10 @@ namespace Script
                 }
                 catch (Exception e)
                 {
-                    // Debug.Log(e);
+                    if (e is not ZeroElementCoefficientException)
+                    {
+                        throw;
+                    }
                 }
 
                 retry--;
