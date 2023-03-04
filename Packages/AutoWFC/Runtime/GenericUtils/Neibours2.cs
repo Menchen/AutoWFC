@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace AutoWfc.Runtime.GenericUtils
+namespace AutoWfc.GenericUtils
 {
     public class Neibours2: INeibours
     {

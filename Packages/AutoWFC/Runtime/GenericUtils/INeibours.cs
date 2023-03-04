@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using Newtonsoft.Json;
 
-namespace AutoWfc.Runtime.GenericUtils
+namespace AutoWfc.GenericUtils
 {
     public class INeibours
     {

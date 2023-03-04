@@ -1,10 +1,9 @@
-using AutoWfc.Runtime;
-using AutoWfc.Runtime.Extensions;
+using AutoWfc.Extensions;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
-namespace AutoWFC.Editor
+namespace AutoWfc.Editor
 {
     [CustomEditor(typeof(TilesetSlicer))]
     public class TilesetSlicerEditor : UnityEditor.Editor

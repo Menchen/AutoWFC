@@ -4,7 +4,7 @@ using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
-namespace AutoWfc.Runtime
+namespace AutoWfc.Editor
 {
     public static class GridEditorUtility 
     {

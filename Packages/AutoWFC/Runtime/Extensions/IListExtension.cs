@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace AutoWfc.Runtime.Extensions
+namespace AutoWfc.Extensions
 {
     public static class ListExtension
     {

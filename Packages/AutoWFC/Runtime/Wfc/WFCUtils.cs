@@ -8,11 +8,11 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using AutoWfc.Converters;
+using AutoWfc.Extensions;
+using AutoWfc.GenericUtils;
 using Newtonsoft.Json;
-using AutoWfc.Runtime.Converters;
-using AutoWfc.Runtime.Extensions;
-using AutoWfc.Runtime.GenericUtils;
-using V = TypedArray<int>;
+using V = AutoWfc.GenericUtils.TypedArray<int>;
 
 
 namespace AutoWfc.Wfc

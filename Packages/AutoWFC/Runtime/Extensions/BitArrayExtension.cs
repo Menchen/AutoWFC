@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 
 // ReSharper disable once CheckNamespace
-namespace AutoWfc.Runtime.Extensions
+namespace AutoWfc.Extensions
 {
     public static class BitArrayExtensions
     {

@@ -4,12 +4,15 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 #nullable enable
+using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
-namespace System.Collections.Generic
+namespace AutoWfc.GenericUtils
 {
     /// <summary>
     ///  Represents a min priority queue.

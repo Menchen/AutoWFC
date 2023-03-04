@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace AutoWfc.Runtime.Extensions
+namespace AutoWfc.Extensions
 {
     public static class Vector3IntExtension
     {

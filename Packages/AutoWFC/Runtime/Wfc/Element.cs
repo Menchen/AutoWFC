@@ -1,8 +1,8 @@
 ﻿using System.Collections;
+using AutoWfc.Converters;
+using AutoWfc.Extensions;
 using Newtonsoft.Json;
-using AutoWfc.Runtime.Converters;
-using AutoWfc.Runtime.Extensions;
-using V = TypedArray<int>;
+using V = AutoWfc.GenericUtils.TypedArray<int>;
 namespace AutoWfc.Wfc
 {
     public partial class WfcUtils<T>

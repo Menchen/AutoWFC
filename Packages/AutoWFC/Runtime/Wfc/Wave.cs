@@ -2,8 +2,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using AutoWfc.Runtime.Extensions;
-using V = TypedArray<int>;
+using AutoWfc.Extensions;
+using AutoWfc.GenericUtils;
+using V = AutoWfc.GenericUtils.TypedArray<int>;
 
 namespace AutoWfc.Wfc
 {

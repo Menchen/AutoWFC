@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using AutoWfc.Converters;
 using Newtonsoft.Json;
-using AutoWfc.Runtime.Converters;
-using V = TypedArray<int>;
+using V = AutoWfc.GenericUtils.TypedArray<int>;
 
 namespace AutoWfc.Wfc
 {
