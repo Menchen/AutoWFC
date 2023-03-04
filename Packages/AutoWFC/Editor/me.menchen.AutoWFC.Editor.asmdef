@@ -1,0 +1,9 @@
+﻿{
+  "name": "me.menchen.AutoWFC.Editor",
+  "references":[ 
+    "me.menchen.AutoWFC"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ]
+}

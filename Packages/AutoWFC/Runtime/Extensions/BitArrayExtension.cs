@@ -1,7 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 
 // ReSharper disable once CheckNamespace
-namespace System.Collections
+namespace AutoWfc.Runtime.Extensions
 {
     public static class BitArrayExtensions
     {

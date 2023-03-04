@@ -2,8 +2,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using AutoWfc.Runtime.Extensions;
 
-namespace WFC
+namespace AutoWfc.Wfc
 {
     public partial class WfcUtils<T>
     {

@@ -3,7 +3,7 @@ using System.Collections;
 using System.Linq;
 using Newtonsoft.Json;
 
-namespace Script.Converters
+namespace AutoWfc.Runtime.Converters
 {
     public class BitArrayConverter : JsonConverter<BitArray>
     {

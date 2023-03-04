@@ -2,15 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Script.GenericUtils;
+using AutoWfc.Runtime.GenericUtils;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.Tilemaps;
-using WFC;
+using AutoWfc.Wfc;
 using Random = System.Random;
 
-namespace Script
+namespace AutoWfc.Runtime
 {
     [RequireComponent(typeof(Tilemap))]
     public class TilesetSlicer : MonoBehaviour

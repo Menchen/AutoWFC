@@ -5,7 +5,7 @@ using UnityEngine;
 using Object = UnityEngine.Object;
 
 // Source : https://forum.unity.com/threads/what-is-a-serializable-asset-type-for-folder.608875/
-namespace Script
+namespace AutoWfc.Runtime
 {
     [Serializable]
     public class FolderReference

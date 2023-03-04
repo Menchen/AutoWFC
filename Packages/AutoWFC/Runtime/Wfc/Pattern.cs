@@ -2,10 +2,10 @@
 using System.Collections;
 using System.Collections.Generic;
 using Newtonsoft.Json;
-using Script.Converters;
+using AutoWfc.Runtime.Converters;
 using V = TypedArray<int>;
 
-namespace WFC
+namespace AutoWfc.Wfc
 {
     public partial class WfcUtils<T>
     {

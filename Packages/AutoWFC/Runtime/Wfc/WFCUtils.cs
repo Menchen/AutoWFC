@@ -9,12 +9,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Newtonsoft.Json;
-using Script.Converters;
-using Script.GenericUtils;
+using AutoWfc.Runtime.Converters;
+using AutoWfc.Runtime.Extensions;
+using AutoWfc.Runtime.GenericUtils;
 using V = TypedArray<int>;
 
 
-namespace WFC
+namespace AutoWfc.Wfc
 {
     public partial class WfcUtils<T>
     {

@@ -1,4 +1,4 @@
-﻿namespace WFC
+﻿namespace AutoWfc.Wfc
 {
     public enum BorderBehavior
     {

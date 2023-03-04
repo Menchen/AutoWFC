@@ -1,12 +1,13 @@
-using Script.Extensions;
+using AutoWfc.Runtime;
+using AutoWfc.Runtime.Extensions;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
-namespace Script
+namespace AutoWFC.Editor
 {
     [CustomEditor(typeof(TilesetSlicer))]
-    public class TilesetSlicerEditor : Editor
+    public class TilesetSlicerEditor : UnityEditor.Editor
     {
         // private BoundsInt selectionBounds;
         private Vector3Int? _p1, _p2;
@@ -33,6 +34,7 @@ namespace Script
             var mouseGlobal = HandleUtility.GUIPointToWorldRay(Event.current.mousePosition).GetPoint(0);
             mouseGlobal.z = 0;
             var local = _tilemap.WorldToCell(mouseGlobal);
+            // HandleUtility.AddDefaultControl();
             switch (_selectState)
             {
                 case SelectState.None:
