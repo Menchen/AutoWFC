@@ -13,7 +13,7 @@ using Random = System.Random;
 namespace AutoWfc
 {
     [RequireComponent(typeof(Tilemap))]
-    public class TilesetSlicer : MonoBehaviour
+    public class WfcHelper : MonoBehaviour
     {
 
         public FolderReference folderReference;

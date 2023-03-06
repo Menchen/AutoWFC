@@ -5,8 +5,8 @@ using UnityEngine.Tilemaps;
 
 namespace AutoWfc.Editor
 {
-    [CustomEditor(typeof(TilesetSlicer))]
-    public class TilesetSlicerEditor : UnityEditor.Editor
+    [CustomEditor(typeof(WfcHelper))]
+    public class WfcHelperEditor : UnityEditor.Editor
     {
         // private BoundsInt selectionBounds;
         private Vector3Int? _p1, _p2;
@@ -60,7 +60,7 @@ namespace AutoWfc.Editor
                         // Create Bounds
                         _selectState = SelectState.None;
                         _p2 = local;
-                        _targetTilesetSlicer.CurrentSelection = _p1!.Value.BoundsIntFrom2Points(_p2.Value);
+                        _targetWfcHelper.CurrentSelection = _p1!.Value.BoundsIntFrom2Points(_p2.Value);
                         GUIUtility.hotControl = 0;
                         Event.current.Use();
                         Repaint(); // Refresh inspector for button disable/enable 
@@ -114,15 +114,17 @@ namespace AutoWfc.Editor
             }
         }
 
-        private TilesetSlicer _targetTilesetSlicer;
+        private WfcHelper _targetWfcHelper;
         private Tilemap _tilemap;
 
         private void OnEnable()
         {
-            _targetTilesetSlicer = (TilesetSlicer)target;
-            _tilemap = _targetTilesetSlicer.GetComponent<Tilemap>();
-            _p1 = _targetTilesetSlicer.CurrentSelection?.min;
-            _p2 = _targetTilesetSlicer.CurrentSelection?.max;
+            _targetWfcHelper = (WfcHelper)target;
+            _tilemap = _targetWfcHelper.GetComponent<Tilemap>();
+            _p1 = _targetWfcHelper.CurrentSelection?.min;
+            _p2 = _targetWfcHelper.CurrentSelection?.max;
+
+            PatternExplorerWindow.Current = _targetWfcHelper;
         }
 
         private bool _selectActive;
@@ -135,7 +137,7 @@ namespace AutoWfc.Editor
             // public static void DrawGridMarquee(GridLayout gridLayout, BoundsInt area, Color color)
 
             // SelectionActive = GridSelection.active;
-            TilesetSlicer slicer = (TilesetSlicer)target;
+            WfcHelper slicer = (WfcHelper)target;
             // GridEditorUtility.
             if (GUILayout.Button("Create new pattern From tileset"))
             {
@@ -238,6 +240,11 @@ namespace AutoWfc.Editor
             }
 
             GUILayout.EndHorizontal();
+            if (GUILayout.Button("Open Pattern Explorer"))
+            {
+                PatternExplorerWindow.Current = slicer;
+                PatternExplorerWindow.Init();
+            }
             GUILayout.Label("Editor Tools Label");
         }
 
