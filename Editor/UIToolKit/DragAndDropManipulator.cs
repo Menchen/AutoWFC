@@ -109,7 +109,10 @@ namespace AutoWfc.Editor.UIToolKit
                     allSlots.Where(OverlapsTarget);
                 VisualElement closestOverlappingSlot =
                     FindClosestSlot(overlappingSlots);
-                OnDropped?.Invoke(closestOverlappingSlot);
+                if (closestOverlappingSlot != null)
+                {
+                    OnDropped?.Invoke(closestOverlappingSlot);
+                }
                 // Vector3 closestPos = Vector3.zero;
                 // if (closestOverlappingSlot != null)
                 // {
@@ -126,7 +129,7 @@ namespace AutoWfc.Editor.UIToolKit
 
         private bool OverlapsTarget(VisualElement slot)
         {
-            return target.worldBound.Overlaps(slot.worldBound);
+            return ghost.worldBound.Overlaps(slot.worldBound);
         }
 
         private VisualElement FindClosestSlot(UQueryBuilder<VisualElement> slots)
@@ -137,7 +140,7 @@ namespace AutoWfc.Editor.UIToolKit
             foreach (VisualElement slot in slotsList)
             {
                 Vector3 displacement =
-                    RootSpaceOfSlot(slot) - target.transform.position;
+                    RootSpaceOfSlot(slot) - ghost.transform.position;
                 float distanceSq = displacement.sqrMagnitude;
                 if (distanceSq < bestDistanceSq)
                 {

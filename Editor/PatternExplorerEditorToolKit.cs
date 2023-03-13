@@ -24,6 +24,8 @@ namespace AutoWfc.Editor
             wdn.Show(true);
         }
 
+        public static WfcHelper Current;
+
         private VisualTreeAsset _baseUiTree;
 
         private Dictionary<string, Sprite> _spriteLookUp = new();
@@ -37,7 +39,7 @@ namespace AutoWfc.Editor
         public void CreateGUI()
         {
             rootVisualElement.Clear();
-            if (PatternExplorerWindow.Current == null )
+            if (Current == null || string.IsNullOrEmpty(Current.serializedJson)  )
             {
                 var flex = new VisualElement()
                 {
@@ -54,7 +56,7 @@ namespace AutoWfc.Editor
                 rootVisualElement.Add(flex);
                 return;
             }
-            _cachedJson = PatternExplorerWindow.Current.serializedJson;
+            _cachedJson = Current.serializedJson;
 
             _baseUiTree = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Packages/me.menchen.autowfc/Editor/UIToolKit/PatternExplorer.uxml");
             _patterns = JsonConvert.DeserializeObject<JObject>(_cachedJson)["Patterns"]
@@ -94,6 +96,7 @@ namespace AutoWfc.Editor
                 var dragAndDropManipulator = new DragAndDropManipulator(obj, scroll, ghost);
                 dragAndDropManipulator.OnStartDrop += () => UpdatePreviewButtons("Drop here to insert new pattern");
                 dragAndDropManipulator.OnEndDrop += () => UpdatePreviewButtons("Click to show neighbours");
+                dragAndDropManipulator.OnDropped += element => Debug.Log(element.name);
                 patternList.Add(obj);
             });
         }
@@ -131,9 +134,9 @@ namespace AutoWfc.Editor
 
         public void OnGUI()
         {
-            if (PatternExplorerWindow.Current.serializedJson != _cachedJson)
+            if ((Current == null && _cachedJson != null ) || Current.serializedJson != _cachedJson)
             {
-                _cachedJson = PatternExplorerWindow.Current.serializedJson;
+                _cachedJson = Current.serializedJson;
                 CreateGUI();
             }
         }
