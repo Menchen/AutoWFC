@@ -1,3 +1,4 @@
+using System;
 using AutoWfc.Extensions;
 using UnityEditor;
 using UnityEngine;
@@ -117,6 +118,15 @@ namespace AutoWfc.Editor
         private WfcHelper _targetWfcHelper;
         private Tilemap _tilemap;
 
+        private void OnDisable()
+        {
+            if (PatternExplorerEditorToolKit.Current == _targetWfcHelper)
+            {
+                PatternExplorerEditorToolKit.Current = null;
+
+            }
+        }
+
         private void OnEnable()
         {
             _targetWfcHelper = (WfcHelper)target;
@@ -124,7 +134,7 @@ namespace AutoWfc.Editor
             _p1 = _targetWfcHelper.CurrentSelection?.min;
             _p2 = _targetWfcHelper.CurrentSelection?.max;
 
-            PatternExplorerWindow.Current = _targetWfcHelper;
+            PatternExplorerEditorToolKit.Current = _targetWfcHelper;
         }
 
         private bool _selectActive;
@@ -242,8 +252,8 @@ namespace AutoWfc.Editor
             GUILayout.EndHorizontal();
             if (GUILayout.Button("Open Pattern Explorer"))
             {
-                PatternExplorerWindow.Current = slicer;
-                PatternExplorerWindow.Init();
+                PatternExplorerEditorToolKit.Current = slicer;
+                PatternExplorerEditorToolKit.Init();
             }
             GUILayout.Label("Editor Tools Label");
         }

@@ -3,15 +3,15 @@
         <ui:VisualElement name="ROOT" style="align-items: stretch; flex-wrap: nowrap; flex-direction: column; justify-content: center;">
             <ui:VisualElement name="Preview" class="slots" style="flex-direction: column; flex-wrap: wrap; left: auto; right: auto; align-items: center; justify-content: center; margin-left: 0; margin-right: 0; margin-top: 8px; margin-bottom: 8px; flex-grow: 1;">
                 <ui:VisualElement name="H" style="flex-direction: row; justify-content: center; height: auto; width: auto; align-items: auto;">
-                    <ui:Button display-tooltip-when-elided="true" name="UP" class="slot" style="min-width: 64px; min-height: 64px; width: 64px; height: auto; max-width: 64px; max-height: 64px;" />
+                    <ui:Button display-tooltip-when-elided="true" name="UP" class="slot" style="min-width: 64px; min-height: 64px; width: 64px; height: auto; max-width: 64px; max-height: 64px; white-space: normal; font-size: 11px;" />
                 </ui:VisualElement>
                 <ui:VisualElement name="M" style="flex-direction: row; justify-content: flex-start; align-items: auto; flex-shrink: 1; margin-left: 0; margin-right: 0; margin-top: 5px; margin-bottom: 5px;">
-                    <ui:Button display-tooltip-when-elided="true" name="LEFT" class="slot" style="min-width: 64px; min-height: 64px; width: 64px; height: auto; max-width: 64px; max-height: 64px;" />
-                    <ui:Button display-tooltip-when-elided="true" name="MIDDLE" class="slot" style="min-width: 64px; min-height: 64px; width: 64px; height: auto; max-width: 64px; max-height: 64px;" />
-                    <ui:Button display-tooltip-when-elided="true" name="RIGHT" class="slot" style="min-width: 64px; min-height: 64px; width: 64px; height: auto; max-width: 64px; max-height: 64px;" />
+                    <ui:Button display-tooltip-when-elided="true" name="LEFT" class="slot" style="min-width: 64px; min-height: 64px; width: 64px; height: auto; max-width: 64px; max-height: 64px; white-space: normal; font-size: 11px;" />
+                    <ui:Button display-tooltip-when-elided="true" name="MIDDLE" class="slot" style="min-width: 64px; min-height: 64px; width: 64px; height: auto; max-width: 64px; max-height: 64px; white-space: normal; font-size: 11px;" />
+                    <ui:Button display-tooltip-when-elided="true" name="RIGHT" class="slot" style="min-width: 64px; min-height: 64px; width: 64px; height: auto; max-width: 64px; max-height: 64px; white-space: normal; font-size: 11px;" />
                 </ui:VisualElement>
                 <ui:VisualElement name="L" style="flex-direction: row; justify-content: center; align-items: auto;">
-                    <ui:Button display-tooltip-when-elided="true" name="DOWN" class="slot" style="min-width: 64px; min-height: 64px; width: 64px; height: auto; max-width: 64px; max-height: 64px;" />
+                    <ui:Button display-tooltip-when-elided="true" name="DOWN" class="slot" style="min-width: 64px; min-height: 64px; width: 64px; height: auto; max-width: 64px; max-height: 64px; white-space: normal; font-size: 11px;" />
                 </ui:VisualElement>
             </ui:VisualElement>
             <ui:VisualElement name="PatternList" style="flex-direction: row; flex-wrap: wrap;" />
