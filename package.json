@@ -1,0 +1,19 @@
+{
+  "name": "me.menchen.autowfc",
+  "version": "1.0.0",
+  "description": "An implementation of Wave function collapse with editor tools with support with Tilemap",
+  "displayName": "AutoWfc",
+  "unity": "2019.4",
+  "author": {
+    "email": "me@menchen.me",
+    "name": "Mengchen Huang",
+    "url": "https://menchen.me"
+  },
+  "dependencies": {
+    "com.unity.2d.tilemap": "1.0.0",
+    "com.unity.2d.sprite": "1.0.0",
+    "com.cysharp.unitask": "2.2.5",
+    "com.browar.editor-toolbox":"0.12.0"
+  },
+  "hideInEditor": false
+}
