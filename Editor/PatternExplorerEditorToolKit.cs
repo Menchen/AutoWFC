@@ -31,6 +31,8 @@ namespace AutoWfc.Editor
         private Dictionary<string, Sprite> _spriteLookUp = new();
         private List<WfcUtils<string>.Pattern> _patterns;
 
+        private string _centerValue;
+
         private Button _previewUp;
         private Button _previewDown;
         private Button _previewLeft;
@@ -39,7 +41,7 @@ namespace AutoWfc.Editor
         public void CreateGUI()
         {
             rootVisualElement.Clear();
-            if (Current == null || string.IsNullOrEmpty(Current.serializedJson)  )
+            if (Current == null || string.IsNullOrEmpty(Current.serializedJson))
             {
                 var flex = new VisualElement()
                 {
@@ -71,9 +73,11 @@ namespace AutoWfc.Editor
             var ghost = root.Q("Ghost");
             var scroll = root.Q<ScrollView>("SCROLL");
             UpdatePreviewButtons("Click to show neighbours");
+            _previewCenter.text = "Click to show all pattern";
             GeneratePatternList(root, scroll, ghost);
         }
 
+        private string lastHoverText;
         private void GeneratePatternList(TemplateContainer root, ScrollView scroll, VisualElement ghost)
         {
             var patternList = root.Q("PatternList");
@@ -89,16 +93,56 @@ namespace AutoWfc.Editor
                 obj.style.marginLeft = 8;
                 obj.style.marginRight = 8;
                 obj.style.marginTop = 8;
+
                 obj.tooltip = e.Value;
                 // obj.style.position = new StyleEnum<Position>(Position.Absolute);
                 // var bnt = new Button(() => PatternButtonClicked(e.Value)) { text = e.Value };
                 // obj.Add(bnt);
                 var dragAndDropManipulator = new DragAndDropManipulator(obj, scroll, ghost);
                 dragAndDropManipulator.OnStartDrop += () => UpdatePreviewButtons("Drop here to insert new pattern");
+                dragAndDropManipulator.OnStartDrop += () =>
+                    obj.style.unityBackgroundImageTintColor = new Color(0.3f, 0.3f, 0.3f, 1f);
+                dragAndDropManipulator.OnStartDrop += ()=> _previewCenter.text = "Drop here to switch pattern";
+                dragAndDropManipulator.OnEndDrop += ()=> _previewCenter.text = "Click to show all pattern";
                 dragAndDropManipulator.OnEndDrop += () => UpdatePreviewButtons("Click to show neighbours");
-                dragAndDropManipulator.OnDropped += element => Debug.Log(element.name);
+                dragAndDropManipulator.OnEndDrop += () =>
+                    obj.style.unityBackgroundImageTintColor = Color.white;
+                dragAndDropManipulator.OnDropped += element => DroppedHandler(e.Value,element);
+
+                dragAndDropManipulator.OnStartSlotHover += element =>
+                {
+                    if (element is Button btn)
+                    {
+                        lastHoverText = btn.text;
+                        btn.text = "DROP HERE";
+                    }
+                };
+                dragAndDropManipulator.OnEndSlotHover += element =>
+                {
+                    if (element is Button btn)
+                    {
+                        btn.text = lastHoverText;
+                        lastHoverText = null;
+                    }
+                };
                 patternList.Add(obj);
             });
+        }
+
+        private void DroppedHandler(string pattern, VisualElement slot)
+        {
+            if (slot.name == _previewCenter.name)
+            {
+                UpdateCenterValue(pattern);
+                return;
+            }
+            // TODO Handle neighbours drop A.K.A Add to pattern
+            
+        }
+
+        private void UpdateCenterValue(string pattern)
+        {
+            // TODO
         }
         
 
@@ -112,9 +156,17 @@ namespace AutoWfc.Editor
 
         }
 
-        private void PatternButtonClicked(string hash)
+        private HashSet<string> _blackListPattern;
+
+        private void NavigationButtonHandler(Button btn)
         {
-            Debug.Log(hash);
+            // TODO Filter
+            // TODO Change to Toggle?
+            if (btn.name == _previewCenter.name)
+            {
+                _blackListPattern.Clear();
+                return;
+            }
         }
 
         protected Sprite GetTileSprite(string hash)
@@ -134,7 +186,8 @@ namespace AutoWfc.Editor
 
         public void OnGUI()
         {
-            if ((Current == null && _cachedJson != null ) || Current.serializedJson != _cachedJson)
+            var json = Current == null ? null : Current.serializedJson;
+            if ( json != _cachedJson)
             {
                 _cachedJson = Current.serializedJson;
                 CreateGUI();

@@ -1,7 +1,7 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
     <ui:ScrollView mode="Vertical" name="SCROLL">
         <ui:VisualElement name="ROOT" style="align-items: stretch; flex-wrap: nowrap; flex-direction: column; justify-content: center;">
-            <ui:VisualElement name="Preview" class="slots" style="flex-direction: column; flex-wrap: wrap; left: auto; right: auto; align-items: center; justify-content: center; margin-left: 0; margin-right: 0; margin-top: 8px; margin-bottom: 8px; flex-grow: 1;">
+            <ui:VisualElement name="Preview" class="slots" style="flex-direction: column; flex-wrap: wrap; left: auto; right: auto; align-items: center; justify-content: center; margin-left: 0; margin-right: 0; margin-top: 16px; margin-bottom: 48px; flex-grow: 1;">
                 <ui:VisualElement name="H" style="flex-direction: row; justify-content: center; height: auto; width: auto; align-items: auto;">
                     <ui:Button display-tooltip-when-elided="true" name="UP" class="slot" style="min-width: 64px; min-height: 64px; width: 64px; height: auto; max-width: 64px; max-height: 64px; white-space: normal; font-size: 11px;" />
                 </ui:VisualElement>

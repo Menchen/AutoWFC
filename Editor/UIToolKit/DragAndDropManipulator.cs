@@ -13,7 +13,10 @@ namespace AutoWfc.Editor.UIToolKit
         public event Action OnStartDrop; 
         public event Action OnDrag; 
         public event Action OnEndDrop;
-        public event Action<VisualElement> OnDropped; 
+        public event Action<VisualElement> OnDropped;
+
+        public event Action<VisualElement> OnStartSlotHover; 
+        public event Action<VisualElement> OnEndSlotHover; 
         // Write a constructor to set target and store a reference to the 
         // root of the visual tree.
         public DragAndDropManipulator(VisualElement target, ScrollView root, VisualElement ghost)
@@ -51,6 +54,8 @@ namespace AutoWfc.Editor.UIToolKit
 
         private VisualElement ghost { get; }
 
+        private VisualElement activeSlot { get; set; }
+
         // This method stores the starting position of target and the pointer, 
         // makes target capture the pointer, and denotes that a drag is now in progress.
         private void PointerDownHandler(PointerDownEvent evt)
@@ -78,6 +83,30 @@ namespace AutoWfc.Editor.UIToolKit
                 pos = ghost.parent.WorldToLocal(pos);
                 ghost.transform.position = pos;
                 OnDrag?.Invoke();
+                
+                
+                
+                VisualElement slotsContainer = root.Q<VisualElement>(className: "slots");
+                UQueryBuilder<VisualElement> allSlots =
+                    slotsContainer.Query<VisualElement>(className: "slot");
+                UQueryBuilder<VisualElement> overlappingSlots =
+                    allSlots.Where(OverlapsTarget);
+                VisualElement closestOverlappingSlot =
+                    FindClosestSlot(overlappingSlots);
+                if (closestOverlappingSlot != activeSlot)
+                {
+                    if (activeSlot != null)
+                    {
+                        OnEndSlotHover?.Invoke(activeSlot);
+                    }
+
+                    if (closestOverlappingSlot != null)
+                    {
+                        OnStartSlotHover?.Invoke(closestOverlappingSlot);
+                    }
+
+                    activeSlot = closestOverlappingSlot;
+                }
             }
         }
 
@@ -113,16 +142,8 @@ namespace AutoWfc.Editor.UIToolKit
                 {
                     OnDropped?.Invoke(closestOverlappingSlot);
                 }
-                // Vector3 closestPos = Vector3.zero;
-                // if (closestOverlappingSlot != null)
-                // {
-                //     closestPos = RootSpaceOfSlot(closestOverlappingSlot);
-                //     closestPos = new Vector2(closestPos.x - 5, closestPos.y - 5);
-                // }
 
-                // target.transform.position =
-                //     closestOverlappingSlot != null ? closestPos : targetStartPosition;
-
+                activeSlot = null;
                 enabled = false;
             }
         }
