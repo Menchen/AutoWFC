@@ -190,12 +190,14 @@ namespace AutoWfc.Editor
             {
                 Undo.RecordObject(slicer,"Learn pattern");
                 slicer.LearnPatternFromRegion(slicer.CurrentSelection!.Value);
+                EditorUtility.SetDirty(slicer);
             }
 
             if (clickUnlearnFromSelection)
             {
                 Undo.RecordObject(slicer,"Unlearn pattern");
                 slicer.UnLearnPatternFromRegion(slicer.CurrentSelection!.Value);
+                EditorUtility.SetDirty(slicer);
             }
 
             if (clickedGenerateRegion)
@@ -223,6 +225,7 @@ namespace AutoWfc.Editor
                         _tilemap.SetTile(slicer.CurrentSelection.Value.position + new Vector3Int(x, y, 0), null);
                     }
                 }
+                EditorUtility.SetDirty(_tilemap);
             }
 
             // Disable selection if another Tool is selected
