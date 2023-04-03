@@ -44,10 +44,6 @@ namespace AutoWfc.Editor.UIToolKit
             target.UnregisterCallback<PointerCaptureOutEvent>(PointerCaptureOutHandler);
         }
 
-        private Vector2 targetStartPosition { get; set; }
-
-        private Vector2 pointerStartPosition { get; set; }
-
         private bool enabled { get; set; }
 
         private ScrollView root { get; }
@@ -60,14 +56,16 @@ namespace AutoWfc.Editor.UIToolKit
         // makes target capture the pointer, and denotes that a drag is now in progress.
         private void PointerDownHandler(PointerDownEvent evt)
         {
-            targetStartPosition = target.worldBound.position;
-            pointerStartPosition = evt.position;
+            // targetStartPosition = target.worldBound.position + target.worldBound.size/2;
+            // pointerStartPosition = evt.position;
             target.CapturePointer(evt.pointerId);
             enabled = true;
             ghost.style.visibility = new StyleEnum<Visibility>(Visibility.Visible);
             ghost.style.backgroundImage = target.style.backgroundImage;
 
-            var pos = (Vector2)evt.position - (pointerStartPosition - targetStartPosition) + root.scrollOffset;
+            // var pos = (Vector2)evt.position - (pointerStartPosition - targetStartPosition) + root.scrollOffset;
+            var pos = (Vector2)evt.position + root.scrollOffset;
+            pos -= ghost.worldBound.size / 2;
             pos = ghost.parent.WorldToLocal(pos);
             ghost.transform.position = pos;
             OnStartDrop?.Invoke();
@@ -79,7 +77,9 @@ namespace AutoWfc.Editor.UIToolKit
         {
             if (enabled && target.HasPointerCapture(evt.pointerId))
             {
-                var pos = (Vector2)evt.position - (pointerStartPosition - targetStartPosition) + root.scrollOffset;
+                // var pos = (Vector2)evt.position - (pointerStartPosition - targetStartPosition) + root.scrollOffset;
+                var pos = (Vector2)evt.position + root.scrollOffset;
+                pos -= ghost.worldBound.size / 2;
                 pos = ghost.parent.WorldToLocal(pos);
                 ghost.transform.position = pos;
                 OnDrag?.Invoke();
@@ -150,7 +150,7 @@ namespace AutoWfc.Editor.UIToolKit
 
         private bool OverlapsTarget(VisualElement slot)
         {
-            return ghost.worldBound.Overlaps(slot.worldBound);
+            return slot.worldBound.Overlaps(new Rect(ghost.worldBound.position+ghost.worldBound.size/2,Vector2.one));
         }
 
         private VisualElement FindClosestSlot(UQueryBuilder<VisualElement> slots)
