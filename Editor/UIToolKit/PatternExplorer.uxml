@@ -16,6 +16,6 @@
             </ui:VisualElement>
             <ui:VisualElement name="PatternList" style="flex-direction: row; flex-wrap: wrap;" />
         </ui:VisualElement>
-        <ui:VisualElement name="Ghost" style="position: absolute; width: 64px; height: 64px; background-color: rgb(183, 75, 75); visibility: hidden;" />
+        <ui:VisualElement name="Ghost" style="position: absolute; width: 48px; height: 48px; background-color: rgb(183, 75, 75); visibility: hidden;" />
     </ui:ScrollView>
 </ui:UXML>
