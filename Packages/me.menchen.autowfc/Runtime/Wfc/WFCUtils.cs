@@ -310,6 +310,19 @@ namespace AutoWfc.Wfc
             GeneratePatternFromLookUpTable(lookupTable, frequencyTable, usedMask);
         }
 
+        public void RecalculateFrequency()
+        {
+            var lookupTable = Patterns.ToDictionary(e => e.Value, e => e.Valid.Select(b =>
+            {
+                return b.IterateWithIndex().Where(tuple => tuple.Item1).Select(tuple => Patterns[tuple.Item2].Value)
+                    .ToHashSet();
+            }).ToArray());
+            var frequencyTable = Patterns.ToDictionary(e => e.Value, e => e.Frequency);
+            var usedMask = MaskUsed.IterateWithIndex().Where(tuple => tuple.Item1)
+                .Select(tuple => Patterns[tuple.Item2].Value).ToHashSet();
+            GeneratePatternFromLookUpTable(lookupTable, frequencyTable, usedMask);
+        }
+
         private void GeneratePatternFromLookUpTable(Dictionary<T, HashSet<T>[]> lookupTable,
             Dictionary<T, int> frequencyTable, HashSet<T> usedMask)
         {
