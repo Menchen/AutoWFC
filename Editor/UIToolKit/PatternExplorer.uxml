@@ -2,9 +2,7 @@
     <ui:ScrollView mode="Vertical" name="SCROLL">
         <ui:VisualElement name="ROOT" style="align-items: stretch; flex-wrap: nowrap; flex-direction: column; justify-content: center;">
             <ui:VisualElement name="PreviewFlex" style="flex-direction: row; flex-wrap: wrap;">
-                <ui:VisualElement name="Pre-Preview">
-                    <ui:Label text="Pre" display-tooltip-when-elided="true" />
-                </ui:VisualElement>
+                <ui:VisualElement name="Pre-Preview" style="padding-left: 8px; padding-right: 8px; padding-top: 8px; padding-bottom: 8px;" />
                 <ui:VisualElement name="Preview" class="slots" style="flex-direction: column; flex-wrap: wrap; left: auto; right: auto; align-items: center; justify-content: center; margin-left: 0; margin-right: 0; margin-top: 16px; margin-bottom: 48px; flex-grow: 1;">
                     <ui:VisualElement name="H" style="flex-direction: row; justify-content: center; height: auto; width: auto; align-items: auto;">
                         <ui:Button display-tooltip-when-elided="true" name="UP" class="slot" style="min-width: 64px; min-height: 64px; width: 64px; height: auto; max-width: 64px; max-height: 64px; white-space: normal; font-size: 11px;" />
@@ -18,9 +16,7 @@
                         <ui:Button display-tooltip-when-elided="true" name="DOWN" class="slot" style="min-width: 64px; min-height: 64px; width: 64px; height: auto; max-width: 64px; max-height: 64px; white-space: normal; font-size: 11px;" />
                     </ui:VisualElement>
                 </ui:VisualElement>
-                <ui:VisualElement name="Post-Preview">
-                    <ui:Label text="Post" display-tooltip-when-elided="true" />
-                </ui:VisualElement>
+                <ui:VisualElement name="Post-Preview" />
             </ui:VisualElement>
             <ui:VisualElement name="PatternList" style="flex-direction: row; flex-wrap: wrap;" />
         </ui:VisualElement>

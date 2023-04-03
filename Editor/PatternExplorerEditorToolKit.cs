@@ -9,6 +9,7 @@ using AutoWfc.Wfc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using UnityEditor;
+using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.Tilemaps;
@@ -201,6 +202,52 @@ namespace AutoWfc.Editor
             });
         }
 
+        private void UpdateInspectorPreview()
+        {
+            _prePreview.Clear();
+            _postPreview.Clear();
+            var cp = CenterPattern; 
+            if (cp is null)
+            {
+                return;
+            }
+            _prePreview.Add(new Label($"Value: {cp.Value}"));
+            _prePreview.Add(new Label($"Id: {cp.Id}"));
+            _prePreview.Add(new Label($"Entropy: {cp.Entropy}"));
+            _prePreview.Add(new Label($"NormalizedFrequency: {cp.NormalizedFrequency}"));
+            _prePreview.Add(new Label($"RemainingEntropy: {cp.RemainingEntropy}"));
+            
+
+            var frequency = new IntegerField("Frequency")
+            {
+                value = cp.Frequency
+            };
+            frequency.RegisterValueChangedCallback(e =>
+            {
+                cp.Frequency = Mathf.Max(1, e.newValue);
+                Save();
+            });
+            _postPreview.Add(frequency);
+            
+            var toggle = new Toggle("UsedMask")
+            {
+                value = WfcUtils<string>.BuildFromJson(_cachedJson).MaskUsed[cp.Id]
+            };
+            toggle.RegisterValueChangedCallback(e =>
+            {
+                if (e.previousValue != e.newValue)
+                {
+                    var wfc = WfcUtils<string>.BuildFromJson(_cachedJson);
+                    wfc.MaskUsed[cp.Id] = e.newValue;
+                    _cachedJson = wfc.SerializeToJson();
+                    Save();
+
+                }
+            });
+            _postPreview.Add(toggle);
+            // _postPreview.Add(new TextField());
+        }
+
         private void DroppedHandler(string pattern, VisualElement slot)
         {
             if (slot.name == _previewCenter.name)
@@ -223,8 +270,11 @@ namespace AutoWfc.Editor
             var oldValue = centerPattern.Valid[(int)dir][patternId.Id];
             centerPattern.Valid[(int)dir][patternId.Id] = !oldValue;
             patternId.Valid[(int)GetComplementDirection(dir)][centerPattern.Id] = !oldValue;
+            centerPattern.Frequency = Mathf.Max(1, centerPattern.Frequency + (oldValue ? -1 : 1));
+            patternId.Frequency = Mathf.Max(1, patternId.Frequency + (oldValue ? -1 : 1));
             Save();
         }
+
 
         private Direction GetComplementDirection(Direction direction)
         {
@@ -248,7 +298,12 @@ namespace AutoWfc.Editor
             var jObj = JsonConvert.DeserializeObject<JObject>(_cachedJson);
             jObj["Patterns"] = JToken.FromObject(_patterns);
             Undo.RecordObject(Current, "Pattern Explorer edit");
-            Current.serializedJson = jObj.ToString(Formatting.None);
+            var json = jObj.ToString(Formatting.None);
+            var wfc = WfcUtils<string>.BuildFromJson(json);
+            wfc.RecalculateFrequency();
+            
+            // Prevent OnGUI refresh
+            Current.serializedJson = wfc.SerializeToJson();
             _cachedJson = jObj.ToString();
             EditorUtility.SetDirty(Current);
 
@@ -401,6 +456,7 @@ namespace AutoWfc.Editor
         {
             UpdateWhiteList();
             UpdatePreviewsButtons();
+            UpdateInspectorPreview();
             GeneratePatternList(_patterns, _root, _scroll, _ghost);
         }
 
