@@ -19,7 +19,6 @@ namespace AutoWfc.Wfc
 {
     public partial class WfcUtils<T>
     {
-        [JsonProperty] public int Dimension { get; private set; }
 
         // [JsonProperty] public int PatternSize { get; private set; }
         [JsonProperty] public int BITSetSize { get; private set; }
@@ -41,9 +40,6 @@ namespace AutoWfc.Wfc
         public BitArray MaskUsed; // Default Mask for enabled pattern
 
         [JsonIgnore] public Random Random;
-
-
-        [JsonIgnore] public BorderBehavior BorderBehavior;
 
         [JsonProperty]
         public SelectPattern.SelectPatternEnum SelectPatternEnum
@@ -109,8 +105,8 @@ namespace AutoWfc.Wfc
             return JsonConvert.SerializeObject(this, new BitArrayConverter());
         }
 
-        public WfcUtils(int dimension, V sizeInput, T[] input,
-            BorderBehavior borderBehavior, Random random,
+        public WfcUtils(V sizeInput, T[] input,
+            Random random,
             INeibours neighbours, T emptyState, NextCell.NextCellEnum nextCellEnum,
             SelectPattern.SelectPatternEnum selectPatternEnum)
         {
@@ -118,9 +114,7 @@ namespace AutoWfc.Wfc
             NextCellFn = NextCell.GetNextCellFn(nextCellEnum);
             NextCellEnum = nextCellEnum;
             SelectPatternEnum = selectPatternEnum;
-            Dimension = dimension;
             // PatternSize = patternSize;
-            BorderBehavior = borderBehavior;
             Random = random;
             Neighbours = neighbours;
             EmptyState = emptyState;
@@ -383,7 +377,7 @@ namespace AutoWfc.Wfc
             }
 
 
-            Patterns = patternsDict.Select(e => e.Value).ToList();
+            Patterns = patternsDict.Select(e => e.Value).OrderBy(e=>e.Id).ToList();
             PatternLookUp = Patterns.ToDictionary(e => e.Value, e => e.Id);
         }
 
