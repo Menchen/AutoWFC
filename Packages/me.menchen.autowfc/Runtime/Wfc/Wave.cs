@@ -95,7 +95,6 @@ namespace AutoWfc.Wfc
                         if (outputIndex is not null)
                         {
                             var neighbourElement = CurrentWave[outputIndex.Value];
-                            ;
                             if (neighbourElement.Collapsed)
                             {
                                 continue;

@@ -190,7 +190,6 @@ namespace AutoWfc
                 // Use SetTiles ? Seems more efficient.
                 tilemap.SetTile(offset+new Vector3Int(unityIndex.x, unityIndex.y), tile);
             }
-            EditorUtility.SetDirty(tilemap);
         }
 
         public void LearnPatternFromRegion(BoundsInt bounds)
@@ -288,7 +287,7 @@ namespace AutoWfc
                 
             }
 
-            var wfc = new WfcUtils<string>(2,sizeInput,hashedSpriteInput,BorderBehavior.Wrap,new Random(DateTime.Now.Millisecond),new Neibours2(),null,nextCellEnum,selectPatternEnum);
+            var wfc = new WfcUtils<string>(sizeInput,hashedSpriteInput,new Random(DateTime.Now.Millisecond),new Neibours2(),null,nextCellEnum,selectPatternEnum);
             serializedJson = wfc.SerializeToJson();
         }
         
@@ -297,7 +296,7 @@ namespace AutoWfc
             var input = GetTilesFromTilemap(boundsInt, GetComponent<Tilemap>(), out var inputVec);
             // var hashedSpriteInput = sprites.Select(HashSprite).ToArray();
 
-            var wfc = new WfcUtils<string>(2,inputVec,input,BorderBehavior.Wrap,new Random(DateTime.Now.Millisecond),new Neibours2(),null,WfcUtils<string>.NextCell.NextCellEnum.MinState,WfcUtils<string>.SelectPattern.SelectPatternEnum.PatternUniform);
+            var wfc = new WfcUtils<string>(inputVec,input,new Random(DateTime.Now.Millisecond),new Neibours2(),null,WfcUtils<string>.NextCell.NextCellEnum.MinState,WfcUtils<string>.SelectPattern.SelectPatternEnum.PatternUniform);
             serializedJson = wfc.SerializeToJson();
         }
 
