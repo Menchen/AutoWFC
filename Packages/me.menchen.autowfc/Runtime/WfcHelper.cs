@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using AutoWfc.GenericUtils;
+#if UNITY_EDITOR
 using UnityEditor;
+#endif
 using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.Tilemaps;
@@ -20,7 +22,7 @@ namespace AutoWfc
         public BoundsInt? CurrentSelection;
         public Texture2D tileSet;
 
-        private string ResourceLocation => "Packages/me.menchen.autowfc/Runtime/Resources";
+        private string ResourceLocation => folderReference?.Path == null ? null : folderReference.Path+"Resources";
         
         [Range(0f,1f)]
         public float mutation = 1f;
@@ -238,6 +240,7 @@ namespace AutoWfc
                     
                     inputTiles[i] = HashSprite(tile.sprite);
 
+#if UNITY_EDITOR
                     if (saveToFolder)
                     {
                         var fileExist = File.Exists(ResourceLocation + $"/{inputTiles[i]}.asset");
@@ -246,6 +249,7 @@ namespace AutoWfc
                             AssetDatabase.CreateAsset(tile,ResourceLocation+$"/{inputTiles[i]}.asset");
                         }
                     }
+#endif
 
 
                 }
@@ -275,6 +279,7 @@ namespace AutoWfc
             var hashedSpriteInput = sprites.Select(HashSprite).ToArray();
             for (int i = 0; i < hashedSpriteInput.Length; i++)
             {
+#if UNITY_EDITOR
                 if (saveToFolder)
                 {
                     var fileExist = File.Exists(ResourceLocation + $"/{hashedSpriteInput[i]}.asset");
@@ -286,7 +291,7 @@ namespace AutoWfc
                         AssetDatabase.CreateAsset(tile,ResourceLocation+$"/{hashedSpriteInput[i]}.asset");
                     }
                 }
-                
+#endif
             }
 
             var wfc = new WfcUtils<string>(sizeInput,hashedSpriteInput,new Random(DateTime.Now.Millisecond),new Neibours2(),null,nextCellEnum,selectPatternEnum);
