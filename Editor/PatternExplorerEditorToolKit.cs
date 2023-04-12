@@ -19,11 +19,11 @@ namespace AutoWfc.Editor
 {
     public class PatternExplorerEditorToolKit : EditorWindow
     {
-        [MenuItem("Tools/PatternToolKit")]
+        [MenuItem("Window/WFC Pattern Explorer")]
         public static void Init()
         {
             EditorWindow wdn = GetWindow<PatternExplorerEditorToolKit>();
-            wdn.titleContent = new GUIContent("ToolKit Pattern");
+            wdn.titleContent = new GUIContent("WFC Pattern Explorer");
             wdn.Show(true);
         }
 
@@ -171,7 +171,7 @@ namespace AutoWfc.Editor
                 // var bnt = new Button(() => PatternButtonClicked(e.Value)) { text = e.Value };
                 // obj.Add(bnt);
                 var dragAndDropManipulator = new DragAndDropManipulator(obj, scroll, ghost);
-                dragAndDropManipulator.OnStartDrop += () => UpdatePreviewButtonsText("Drop here to insert new pattern");
+                dragAndDropManipulator.OnStartDrop += () => UpdateStartDropPreviewButtonsText(e);
                 dragAndDropManipulator.OnStartDrop += () =>
                     obj.style.unityBackgroundImageTintColor =
                         isWhiteListed ? new Color(0.3f, 0.3f, 0.3f, 1f) : new Color(0.1f, 0.1f, 0.1f, 1);
@@ -360,6 +360,19 @@ namespace AutoWfc.Editor
             _previewLeft.text = text;
             _previewRight.text = text;
             _previewUp.text = text;
+        }
+        private void UpdateStartDropPreviewButtonsText(WfcUtils<string>.Pattern pattern)
+        {
+            var cp = CenterPattern;
+            if (cp is null)
+            {
+                return;
+            }
+            foreach (var direction in _allDirection)
+            {
+                var btn = GetButtonFromDirection(direction);
+                btn.text = cp.Valid[(int)direction][pattern.Id] ? "Drop here to Remove" : "Drop here to Add";
+            }
         }
 
         private string GenerateSpriteToolTip(string pattern)

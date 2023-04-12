@@ -4,6 +4,8 @@ using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
+// Decompiled from GridEditorUtility
+
 namespace AutoWfc.Editor
 {
     public static class GridEditorUtility 
