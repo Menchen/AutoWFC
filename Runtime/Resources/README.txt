@@ -1,0 +1,1 @@
+Resource folder used to save tile sprites
