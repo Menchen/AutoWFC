@@ -1,5 +1,7 @@
 using System;
 using AutoWfc.Extensions;
+using AutoWfc.GenericUtils;
+using JetBrains.Annotations;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Tilemaps;
@@ -13,6 +15,7 @@ namespace AutoWfc.Editor
         private Vector3Int? _p1, _p2;
         private EditorMode _editorMode;
         private SelectState _selectState;
+        private string[] _lastGeneratedRegion;
 
         private enum SelectState
         {
@@ -43,6 +46,7 @@ namespace AutoWfc.Editor
                         _selectState = SelectState.Drag;
                         _p1 = local;
                         _p2 = null;
+                        _lastGeneratedRegion = null;
                         GUIUtility.hotControl = id;
                         Event.current.Use();
                         Repaint(); // Refresh inspector for button disable/enable 
@@ -62,6 +66,7 @@ namespace AutoWfc.Editor
                         _selectState = SelectState.None;
                         _p2 = local;
                         _targetWfcHelper.CurrentSelection = _p1!.Value.BoundsIntFrom2Points(_p2.Value);
+                        _lastGeneratedRegion = null;
                         GUIUtility.hotControl = 0;
                         Event.current.Use();
                         Repaint(); // Refresh inspector for button disable/enable 
@@ -132,7 +137,8 @@ namespace AutoWfc.Editor
             _targetWfcHelper = (WfcHelper)target;
             _tilemap = _targetWfcHelper.GetComponent<Tilemap>();
             _p1 = _targetWfcHelper.CurrentSelection?.min;
-            _p2 = _targetWfcHelper.CurrentSelection?.max;
+            _p2 = _targetWfcHelper.CurrentSelection?.max - Vector3Int.one;
+            _lastGeneratedRegion = null;
 
             PatternExplorerEditorToolKit.Current = _targetWfcHelper;
         }
@@ -142,25 +148,29 @@ namespace AutoWfc.Editor
 
         public override void OnInspectorGUI()
         {
+            WfcHelper slicer = (WfcHelper)target;
+            if (string.IsNullOrEmpty(slicer.tileOutputFolder?.Path))
+            {
+                GUILayout.Label("Missing Tile output folder, some feature might not work.");
+            }
             DrawDefaultInspector();
 
             // public static void DrawGridMarquee(GridLayout gridLayout, BoundsInt area, Color color)
 
             // SelectionActive = GridSelection.active;
-            WfcHelper slicer = (WfcHelper)target;
             // GridEditorUtility.
-            if (GUILayout.Button("Create new pattern From tileset"))
+            if (GUILayout.Button("Create new model from tile set"))
             {
-                Undo.RecordObject(slicer,"Create new pattern from selection");
+                Undo.RecordObject(slicer,"Create new model from selection");
                 slicer.CreateWfcFromTileSet();
             }
 
             using (new EditorGUI.DisabledScope(slicer.CurrentSelection is null))
             {
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Create new pattern from selection"))
+                if (GUILayout.Button("Create new model from selection"))
                 {
-                    Undo.RecordObject(slicer,"Create new pattern from selection");
+                    Undo.RecordObject(slicer,"Create new model from selection");
                     slicer.CreateFromSelection(slicer.CurrentSelection!.Value);
                 }
                 GUILayout.EndHorizontal();
@@ -174,58 +184,74 @@ namespace AutoWfc.Editor
             bool clickUnlearnFromSelection;
             using (new EditorGUI.DisabledScope(string.IsNullOrEmpty(slicer.serializedJson) || slicer.CurrentSelection is null))
             {
-                GUILayout.BeginHorizontal();
-                clickedGenerateRegion = GUILayout.Button("GenerateWithJson");
-                clickSetToEmpty = GUILayout.Button("SetToEmpty");
-                GUILayout.EndHorizontal();
-                GUILayout.BeginHorizontal();
-                clickTrainFromSelection = GUILayout.Button("TrainFromSelection");
-                using (new EditorGUI.DisabledScope(!GUI.enabled || slicer.CurrentSelection?.size.sqrMagnitude != 6))
+                using (new DisposableGUILayout.Horizontal())
                 {
-                    clickUnlearnFromSelection = GUILayout.Button("UnLearnFromSelection");
+                    clickedGenerateRegion = GUILayout.Button("Generate Tile from model");
+                    clickSetToEmpty = GUILayout.Button("SetToEmpty");
                 }
-            }
-
-            if (clickTrainFromSelection)
-            {
-                Undo.RecordObject(slicer,"Learn pattern");
-                slicer.LearnPatternFromRegion(slicer.CurrentSelection!.Value);
-                EditorUtility.SetDirty(slicer);
-            }
-
-            if (clickUnlearnFromSelection)
-            {
-                Undo.RecordObject(slicer,"Unlearn pattern");
-                slicer.UnLearnPatternFromRegion(slicer.CurrentSelection!.Value);
-                EditorUtility.SetDirty(slicer);
-            }
-
-            if (clickedGenerateRegion)
-            {
-                var generatedWfc = slicer.GenerateWfc(slicer.CurrentSelection!.Value);
-                if (generatedWfc is not null)
+                using (new DisposableGUILayout.Horizontal())
                 {
-                    // Use RegisterCompleteObjectUndo instead of RecordObject for tilemap,
-                    // because it's faster to replace the object instead of tracking the changes.
-                    Undo.RegisterCompleteObjectUndo(_tilemap,"WFC Tilemap");
-                    slicer.ApplyWfc(generatedWfc,slicer.CurrentSelection!.Value);
-                    EditorUtility.SetDirty(_tilemap);
-                }
-            }
-
-            if (clickSetToEmpty)
-            {
-                Undo.RegisterCompleteObjectUndo(_tilemap,"Tilemap set empty");
-                // _tilemap.BoxFill(slicer.CurrentSelection!.Value.position, null, 0, 0,
-                //     slicer.CurrentSelection.Value.size.x, slicer.CurrentSelection.Value.size.y);
-                for (int x = 0; x < slicer.CurrentSelection!.Value.size.x; x++)
-                {
-                    for (int y = 0; y < slicer.CurrentSelection.Value.size.y; y++)
+                    clickTrainFromSelection = GUILayout.Button("Train from selected region");
+                    using (new EditorGUI.DisabledScope(!GUI.enabled || slicer.CurrentSelection?.size.sqrMagnitude != 6))
                     {
-                        _tilemap.SetTile(slicer.CurrentSelection.Value.position + new Vector3Int(x, y, 0), null);
+                        clickUnlearnFromSelection = GUILayout.Button("Unlearn from selected region");
                     }
                 }
-                EditorUtility.SetDirty(_tilemap);
+            }
+
+            using (new DisposableGUILayout.Horizontal())
+            {
+                if (clickTrainFromSelection)
+                {
+                    Undo.RecordObject(slicer, "Learn pattern");
+                    slicer.LearnPatternFromRegion(slicer.CurrentSelection!.Value);
+                    EditorUtility.SetDirty(slicer);
+                }
+
+                if (clickUnlearnFromSelection)
+                {
+                    Undo.RecordObject(slicer, "Unlearn pattern");
+                    slicer.UnLearnPatternFromRegion(slicer.CurrentSelection!.Value);
+                    EditorUtility.SetDirty(slicer);
+                }
+            }
+
+            using (new DisposableGUILayout.Horizontal())
+            {
+                if (clickedGenerateRegion)
+                {
+                    if (_lastGeneratedRegion is null)
+                    {
+                        // Cache region before WFC
+                        var beforeWfc = slicer.GetTilesFromTilemap(slicer.CurrentSelection!.Value, _tilemap,out _);
+                        _lastGeneratedRegion = beforeWfc;
+                    }
+                    var generatedWfc = slicer.GenerateWfc(slicer.CurrentSelection!.Value, _lastGeneratedRegion);
+                    if (generatedWfc is not null)
+                    {
+                        // Use RegisterCompleteObjectUndo instead of RecordObject for tilemap,
+                        // because it's faster to replace the object instead of tracking the changes.
+                        Undo.RegisterCompleteObjectUndo(_tilemap, "WFC Tilemap");
+                        slicer.ApplyWfc(generatedWfc, slicer.CurrentSelection!.Value);
+                        EditorUtility.SetDirty(_tilemap);
+                    }
+                }
+
+                if (clickSetToEmpty)
+                {
+                    Undo.RegisterCompleteObjectUndo(_tilemap, "Set tilemap region to empty");
+                    // _tilemap.BoxFill(slicer.CurrentSelection!.Value.position, null, 0, 0,
+                    //     slicer.CurrentSelection.Value.size.x, slicer.CurrentSelection.Value.size.y);
+                    for (int x = 0; x < slicer.CurrentSelection!.Value.size.x; x++)
+                    {
+                        for (int y = 0; y < slicer.CurrentSelection.Value.size.y; y++)
+                        {
+                            _tilemap.SetTile(slicer.CurrentSelection.Value.position + new Vector3Int(x, y, 0), null);
+                        }
+                    }
+
+                    EditorUtility.SetDirty(_tilemap);
+                }
             }
 
             // Disable selection if another Tool is selected
@@ -234,7 +260,17 @@ namespace AutoWfc.Editor
                 _selectActive = false;
             }
 
-            _selectActive = GUILayout.Toggle(_selectActive, "Select");
+            EditorGUILayout.EditorToolbar();
+            
+            
+            
+            EditorGUILayout.BeginHorizontal("Toolbar", GUILayout.ExpandWidth(true));
+            // GUILayout.FlexibleSpace();
+            _selectActive = GUILayout.Toggle(_selectActive, "Click Here to toggle grid selection","ToolbarButton",GUILayout.ExpandWidth(true));
+            // GUILayout.FlexibleSpace();
+            EditorGUILayout.EndHorizontal();
+            
+            
             _editorMode = _selectActive ? EditorMode.Select : EditorMode.None;
             if (_selectActive)
             {
@@ -252,13 +288,14 @@ namespace AutoWfc.Editor
                 }
             }
 
-            GUILayout.EndHorizontal();
-            if (GUILayout.Button("Open Pattern Explorer"))
+            using (new DisposableGUILayout.Horizontal())
             {
-                PatternExplorerEditorToolKit.Current = slicer;
-                PatternExplorerEditorToolKit.Init();
+                if (GUILayout.Button("Open Pattern Explorer"))
+                {
+                    PatternExplorerEditorToolKit.Current = slicer;
+                    PatternExplorerEditorToolKit.Init();
+                }
             }
-            GUILayout.Label("Editor Tools Label");
         }
 
     }
