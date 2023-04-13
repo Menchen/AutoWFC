@@ -18,11 +18,11 @@ namespace AutoWfc
     public class WfcHelper : MonoBehaviour
     {
 
-        public FolderReference folderReference;
+        [FormerlySerializedAs("folderReference")] public FolderReference tileOutputFolder;
         public BoundsInt? CurrentSelection;
         public Texture2D tileSet;
 
-        private string ResourceLocation => folderReference?.Path == null ? null : folderReference.Path+"Resources";
+        private string ResourceLocation => tileOutputFolder?.Path == null ? null : tileOutputFolder.Path+"/Resources";
         
         [Range(0f,1f)]
         public float mutation = 1f;
@@ -30,20 +30,10 @@ namespace AutoWfc
         public WfcUtils<string>.SelectPattern.SelectPatternEnum selectPatternEnum;
         public WfcUtils<string>.NextCell.NextCellEnum nextCellEnum;
 
-        [FormerlySerializedAs("ColorScheme")] [SerializeField]
-        private Style colorScheme;
-
         
         [TextArea(15,20)]
         public string serializedJson;
 
-        [Serializable]
-        private class Style
-        {
-            [FormerlySerializedAs("HoverColor")] public Color hoverColor = Color.white;
-            [FormerlySerializedAs("ClickColor")] public Color clickColor = Color.yellow;
-            [FormerlySerializedAs("SelectColor")] public Color selectColor = new Color(255/255f, 165/255f, 0f);
-        }
 
         public void ApplyWfc(string[] wfc, BoundsInt bounds)
         {
@@ -84,7 +74,7 @@ namespace AutoWfc
 
         }
 
-        public string[] GenerateWfc(BoundsInt bounds)
+        public string[] GenerateWfc(BoundsInt bounds, string[] preset = null)
         {
             var wfc = WfcUtils<string>.BuildFromJson(serializedJson);
             wfc.NextCellEnum = nextCellEnum;
@@ -95,13 +85,13 @@ namespace AutoWfc
             var outputVec = new[] { bounds.size.x, bounds.size.y };
             
             var tilemap = GetComponent<Tilemap>();
-            var inputTiles = GetTilesFromTilemap(bounds, tilemap, out var inputVec);
+            preset ??= GetTilesFromTilemap(bounds, tilemap, out var inputVec);
             var retry = 10;
             while (retry > 0)
             {
                 try
                 {
-                    var collapsed = wfc.Collapse(outputVec,out var output,inputTiles);
+                    var collapsed = wfc.Collapse(outputVec,out var output,preset);
                     if (collapsed)
                     {
                         return output;
@@ -246,6 +236,10 @@ namespace AutoWfc
                         var fileExist = File.Exists(ResourceLocation + $"/{inputTiles[i]}.asset");
                         if (!fileExist)
                         {
+                            if (!Directory.Exists(ResourceLocation))
+                            {
+                                AssetDatabase.CreateFolder(ResourceLocation.Substring(0,ResourceLocation.LastIndexOf('/')), "Resources");
+                            }
                             AssetDatabase.CreateAsset(tile,ResourceLocation+$"/{inputTiles[i]}.asset");
                         }
                     }
@@ -288,6 +282,10 @@ namespace AutoWfc
                         var tile = ScriptableObject.CreateInstance<Tile>();
                         tile.name = hashedSpriteInput[i];
                         tile.sprite = sprites[i];
+                        if (!Directory.Exists(ResourceLocation))
+                        {
+                            AssetDatabase.CreateFolder(ResourceLocation.Substring(0,ResourceLocation.LastIndexOf('/')), "Resources");
+                        }
                         AssetDatabase.CreateAsset(tile,ResourceLocation+$"/{hashedSpriteInput[i]}.asset");
                     }
                 }
@@ -323,17 +321,6 @@ namespace AutoWfc
             var h = Mathf.FloorToInt(value.rect.height);
             hash128.Append(value.texture.GetPixels(x, y, w, h));
             return hash128.ToString();
-        }
-
-        public void ReHashSpriteFolder(string path)
-        {
-            if (path == null)
-            {
-                throw new ArgumentNullException(nameof(path));
-            }
-
-            
-            
         }
 
     }
