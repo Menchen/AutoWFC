@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using AutoWfc.Extensions;
 using AutoWfc.GenericUtils;
 using JetBrains.Annotations;
@@ -17,6 +19,11 @@ namespace AutoWfc.Editor
         private EditorMode _editorMode;
         private SelectState _selectState;
         private string[] _lastGeneratedRegion;
+        
+        [SerializeField]
+        private List<Vector3Int> _conflictTiles;
+        [SerializeField]
+        private List<Vector3Int> _conflictEdgeTiles;
 
         private enum SelectState
         {
@@ -31,6 +38,22 @@ namespace AutoWfc.Editor
             Select
         }
 
+
+        private void DrawConflictMap()
+        {
+            if (_conflictTiles is not null)
+            {
+                foreach (var pos in _conflictTiles.Except(_conflictEdgeTiles))
+                {
+                    GridEditorUtility.DrawGridMarquee(_tilemap, new BoundsInt(pos, Vector3Int.one), new Color(1f,0.1f,0.1f,0.9f),localOffset:new Vector3(0,0,2));
+                }
+                foreach (var pos in _conflictEdgeTiles)
+                {
+                    GridEditorUtility.DrawGridMarquee(_tilemap, new BoundsInt(pos, Vector3Int.one), new Color(155/255f,25/255f,170/255f,1),thickness: 2f,localOffset:new Vector3(0,0,3));
+                }
+            }
+            
+        }
 
         private void HandleSelection()
         {
@@ -106,6 +129,7 @@ namespace AutoWfc.Editor
                     // p1 & p2 selected
                     GridEditorUtility.DrawGridMarquee(_tilemap, _p1.Value.BoundsIntFrom2Points(_p2.Value), _lastGeneratedRegion == null ? Color.magenta : new Color(240/255f,156/255f,38/255f));
                 }
+                DrawConflictMap();
             }
             else if (Event.current.type != EventType.Used)
             {
@@ -232,7 +256,15 @@ namespace AutoWfc.Editor
                     {
                         // Use RegisterCompleteObjectUndo instead of RecordObject for tilemap,
                         // because it's faster to replace the object instead of tracking the changes.
+                        Undo.SetCurrentGroupName("WFC Tilemap");
                         Undo.RegisterCompleteObjectUndo(_tilemap, "WFC Tilemap");
+                        Undo.RegisterCompleteObjectUndo(this,"Conflict Map");
+                        Undo.CollapseUndoOperations(Undo.GetCurrentGroup());
+                        HashSet<Vector3Int> edge;
+                        _conflictTiles = slicer.GenerateConflictMap(slicer.CurrentSelection!.Value,
+                            _lastGeneratedRegion, generatedWfc,out edge).ToList();
+                        _conflictEdgeTiles = edge.ToList();
+                        
                         slicer.ApplyWfc(generatedWfc, slicer.CurrentSelection!.Value);
                         EditorUtility.SetDirty(_tilemap);
                     }
