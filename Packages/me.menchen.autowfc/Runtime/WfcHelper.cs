@@ -202,6 +202,32 @@ namespace AutoWfc
             wfc.UnLearnPattern(inputVec,inputTiles);
             serializedJson = wfc.SerializeToJson();
         }
+        
+        public HashSet<Vector3Int> GenerateConflictMap(BoundsInt bounds, string[] before, string[] after, out HashSet<Vector3Int> importantEdge)
+        {
+            var inputVec = new[] { bounds.size.x, bounds.size.y };
+            var inputLength = inputVec.Aggregate((acc, e) => acc * e);
+            var result = new HashSet<Vector3Int>();
+            var offset = bounds.position;
+            importantEdge = new HashSet<Vector3Int>();
+            for (int i = 0; i < inputLength; i++)
+            {
+                var pos = ArrayUtils.UnRavelIndex(inputVec, i);
+                var unityIndex = ToUnityIndex(pos[0], pos[1], inputVec[0], inputVec[1]);
+
+                if (before[i] is not null && before[i] != after[i])
+                {
+                    var unityPos = offset + new Vector3Int(unityIndex.x, unityIndex.y);
+                    result.Add(unityPos);
+                    if (pos[0] == 0 || pos[1] == 0 || pos[0] == inputVec[0]-1 || pos[1] == inputVec[1] - 1)
+                    {
+                        importantEdge.Add(unityPos);
+                    }
+                }
+            }
+
+            return result;
+        }
 
         public string[] GetTilesFromTilemap(BoundsInt bounds, Tilemap tilemap, out int[] inputVec)
         {

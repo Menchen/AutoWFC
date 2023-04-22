@@ -170,7 +170,8 @@ namespace AutoWfc.Editor
             GL.PopMatrix();
         }
 
-        public static void DrawGridMarquee(GridLayout gridLayout, BoundsInt area, Color color,Matrix4x4? localToWorldMatrix = null)
+        public static void DrawGridMarquee(GridLayout gridLayout, BoundsInt area, Color color,
+            Matrix4x4? localToWorldMatrix = null, float thickness = 0, Vector3 localOffset = default)
         {
             if (gridLayout == null)
                 return;
@@ -210,7 +211,7 @@ namespace AutoWfc.Editor
 
                     for (int j = cellLocals.Length - 1; i < cellLocals.Length; j = i++)
                     {
-                        Handles.DrawLine(cellLocals[j],cellLocals[i]);
+                        Handles.DrawLine(cellLocals[j]+localOffset,cellLocals[i]+localOffset,thickness);
                     }
 
                     Handles.matrix = oldMatrix;
