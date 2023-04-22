@@ -14,6 +14,7 @@ using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.Tilemaps;
 using UnityEngine.UIElements;
+using Random = UnityEngine.Random;
 
 namespace AutoWfc.Editor
 {
@@ -125,6 +126,96 @@ namespace AutoWfc.Editor
 
         private string _lastHoverText;
 
+
+        private static float ConvertColorSpace(float c)
+        {
+            if (c <= 0.03928)
+            {
+                return c / 12.92f;
+            }
+
+            return Mathf.Pow((c + 0.055f) / 1.055f, 2.4f);
+        }
+
+        // https://gamedev.stackexchange.com/questions/81482/algorithm-to-modify-a-color-to-make-it-less-similar-than-background
+        private static float Luminance(Color color)
+        {
+            float r, g, b;
+            // color = color.linear;
+            // var gamma = color.gamma;
+            // r = gamma.r;
+            // g = gamma.g;
+            // b = gamma.b;
+            r = ConvertColorSpace(color.r);
+            g = ConvertColorSpace(color.g);
+            b = ConvertColorSpace(color.b);
+            return 0.2126f * r + 0.7152f * g + 0.0722f * b;
+        }
+
+        private static float Contrast(Color a, Color b)
+        {
+            var l1 = Luminance(a);
+            var l2 = Luminance(b);
+            var maxL = l1 >= l2 ? l1 : l2;
+            var minL = l1 <= l2 ? l1 : l2;
+            return (maxL + 0.05f) / (minL + 0.05f);
+        }
+
+        private Color GenerateContrastColor(Color color)
+        {
+            // https://www.w3.org/TR/2008/REC-WCAG20-20081211/#visual-audio-contrast-contrast
+            // WCAG recommend contract of altleast 4.5
+            Color best = Color.gray;
+            float bestContrast = 0;
+
+            int retry = 1000;
+            while (retry > 0)
+            {
+                retry--;
+
+                var c = new Color(Random.value, Random.value, Random.value, 1);
+                var contrast = Contrast(c, color);
+                if (contrast > bestContrast)
+                {
+                    best = c;
+                    bestContrast = contrast;
+                }
+
+                if (bestContrast >= 8)
+                {
+                    break;
+                }
+            }
+
+            return best;
+        }
+
+        private Color GetSpriteAverageColor(Sprite sprite)
+        {
+            var x = Mathf.FloorToInt(sprite.rect.x);
+            var y = Mathf.FloorToInt(sprite.rect.y);
+            var w = Mathf.FloorToInt(sprite.rect.width);
+            var h = Mathf.FloorToInt(sprite.rect.height);
+            var pixels = sprite.texture.GetPixels(x, y, w, h);
+            var sum = pixels.Select(e => new Vector4(e.r, e.g, e.b, e.a)).Aggregate((a, b) => a + b);
+            sum /= (float)pixels.Length;
+            return new Color(sum.x, sum.y, sum.z, sum.w);
+        }
+
+        private void UpdateButtonsColor()
+        {
+            _previewCenter.style.color = string.IsNullOrEmpty(_centerValue)
+                ? new StyleColor(StyleKeyword.Initial)
+                : GenerateContrastColor(GetSpriteAverageColor(_spriteLookUp[_centerValue]));
+            
+            Color c = _previewCenter.style.color.value;
+            
+            _previewCenter.style.unityTextOutlineColor = string.IsNullOrEmpty(_centerValue)
+                ? new StyleColor(StyleKeyword.Initial)
+                : new Color(1-c.r,1-c.g,1-c.b,1);
+            _previewCenter.style.unityTextOutlineWidth = new StyleFloat(0.1f);
+        }
+
         private void UpdatePreviewsButtons()
         {
             foreach (var direction in _allDirection)
@@ -176,8 +267,8 @@ namespace AutoWfc.Editor
                     obj.style.unityBackgroundImageTintColor =
                         isWhiteListed ? new Color(0.3f, 0.3f, 0.3f, 1f) : new Color(0.1f, 0.1f, 0.1f, 1);
                 dragAndDropManipulator.OnStartDrop += () => _previewCenter.text = "Drop here to switch pattern";
-                dragAndDropManipulator.OnEndDrop += () => _previewCenter.text = "Click to show all pattern";
-                dragAndDropManipulator.OnEndDrop += () => UpdatePreviewButtonsText("Click to show neighbours");
+                dragAndDropManipulator.OnEndDrop += () => _previewCenter.text = "";
+                dragAndDropManipulator.OnEndDrop += () => UpdatePreviewButtonsText("Click to filter neighbours");
                 dragAndDropManipulator.OnEndDrop += () =>
                     obj.style.unityBackgroundImageTintColor = defaultColor;
                 dragAndDropManipulator.OnDropped += element => DroppedHandler(e.Value, element);
@@ -206,17 +297,18 @@ namespace AutoWfc.Editor
         {
             _prePreview.Clear();
             _postPreview.Clear();
-            var cp = CenterPattern; 
+            var cp = CenterPattern;
             if (cp is null)
             {
                 return;
             }
+
             _prePreview.Add(new Label($"Value: {cp.Value}"));
             _prePreview.Add(new Label($"Id: {cp.Id}"));
             _prePreview.Add(new Label($"Entropy: {cp.Entropy}"));
             _prePreview.Add(new Label($"NormalizedFrequency: {cp.NormalizedFrequency}"));
             _prePreview.Add(new Label($"RemainingEntropy: {cp.RemainingEntropy}"));
-            
+
 
             var frequency = new IntegerField("Frequency")
             {
@@ -228,7 +320,7 @@ namespace AutoWfc.Editor
                 Save();
             });
             _postPreview.Add(frequency);
-            
+
             var toggle = new Toggle("UsedMask")
             {
                 value = WfcUtils<string>.BuildFromJson(_cachedJson).MaskUsed[cp.Id]
@@ -241,7 +333,6 @@ namespace AutoWfc.Editor
                     wfc.MaskUsed[cp.Id] = e.newValue;
                     _cachedJson = wfc.SerializeToJson();
                     Save();
-
                 }
             });
             _postPreview.Add(toggle);
@@ -301,7 +392,7 @@ namespace AutoWfc.Editor
             var json = jObj.ToString(Formatting.None);
             var wfc = WfcUtils<string>.BuildFromJson(json);
             wfc.RecalculateFrequency();
-            
+
             // Prevent OnGUI refresh
             Current.serializedJson = wfc.SerializeToJson();
             _cachedJson = jObj.ToString();
@@ -361,6 +452,7 @@ namespace AutoWfc.Editor
             _previewRight.text = text;
             _previewUp.text = text;
         }
+
         private void UpdateStartDropPreviewButtonsText(WfcUtils<string>.Pattern pattern)
         {
             var cp = CenterPattern;
@@ -368,6 +460,7 @@ namespace AutoWfc.Editor
             {
                 return;
             }
+
             foreach (var direction in _allDirection)
             {
                 var btn = GetButtonFromDirection(direction);
@@ -470,6 +563,7 @@ namespace AutoWfc.Editor
             UpdateWhiteList();
             UpdatePreviewsButtons();
             UpdateInspectorPreview();
+            UpdateButtonsColor();
             GeneratePatternList(_patterns, _root, _scroll, _ghost);
         }
 
