@@ -22,7 +22,10 @@ namespace AutoWfc
         public BoundsInt? CurrentSelection;
         public Texture2D tileSet;
 
+        public bool cloneTileIfNotExist = false;
+
         private string ResourceLocation => tileOutputFolder?.Path == null ? null : tileOutputFolder.Path+"/Resources";
+        private string RawResourceLocation => tileOutputFolder?.Path;
         
         [Range(0f,1f)]
         public float mutation = 1f;
@@ -40,7 +43,7 @@ namespace AutoWfc
             // var sprites = Resources.LoadAll<Sprite>(tileSet.name);
             // var lookup = sprites.GroupBy(HashSprite).ToDictionary(e => e.Key, e => e.First());
             var tileLookup = new Dictionary<string, TileBase>();
-            var isFolderReferenceValid = !string.IsNullOrEmpty(ResourceLocation);
+            var isFolderReferenceValid = !string.IsNullOrEmpty(RawResourceLocation);
 
             var outputVec = new[] { bounds.size.x, bounds.size.y };
             var offset = bounds.position;
@@ -53,14 +56,7 @@ namespace AutoWfc
                 var pos = ArrayUtils.UnRavelIndex(outputVec, i);
                 if (!tileLookup.ContainsKey(wfc[i]))
                 {
-#if UNITY_EDITOR
-                    tileLookup[wfc[i]] = isFolderReferenceValid ?
-                        AssetDatabase.LoadAssetAtPath<TileBase>(ResourceLocation + $"/{wfc[i]}.asset")
-                        : Resources.Load<Tile>(wfc[i]);
-#else
-                    // Tiles must be inside of Resources folder
-                    tileLookup[output[i]] = Resources.Load<Tile>(output[i]);
-#endif
+                    tileLookup[wfc[i]] = Resources.Load<Tile>(wfc[i]);
                 }
                 var tile = tileLookup[wfc[i]];
                 
@@ -117,7 +113,7 @@ namespace AutoWfc
             // var sprites = Resources.LoadAll<Sprite>(tileSet.name);
             // var lookup = sprites.GroupBy(HashSprite).ToDictionary(e => e.Key, e => e.First());
             var tileLookup = new Dictionary<string, TileBase>();
-            var isFolderReferenceValid = !string.IsNullOrEmpty(ResourceLocation);
+            var isFolderReferenceValid = !string.IsNullOrEmpty(RawResourceLocation);
 
             var wfc = WfcUtils<string>.BuildFromJson(serializedJson);
             wfc.NextCellEnum = nextCellEnum;
@@ -209,7 +205,7 @@ namespace AutoWfc
 
         public string[] GetTilesFromTilemap(BoundsInt bounds, Tilemap tilemap, out int[] inputVec)
         {
-            bool saveToFolder = !string.IsNullOrEmpty(ResourceLocation);
+            bool saveToFolder = !string.IsNullOrEmpty(RawResourceLocation);
             inputVec = new[] { bounds.size.x, bounds.size.y };
             var inputLength = inputVec.Aggregate((acc, e) => acc * e);
             var inputTiles = new string[inputLength];
@@ -240,8 +236,24 @@ namespace AutoWfc
                             {
                                 AssetDatabase.CreateFolder(ResourceLocation.Substring(0,ResourceLocation.LastIndexOf('/')), "Resources");
                             }
-                            AssetDatabase.CreateAsset(tile,ResourceLocation+$"/{inputTiles[i]}.asset");
+
+                            if (!AssetDatabase.Contains(tile))
+                            {
+                                AssetDatabase.CreateAsset(tile,ResourceLocation+$"/{inputTiles[i]}.asset");
+                            }
+                            else
+                            {
+                                if (cloneTileIfNotExist)
+                                {
+                                    AssetDatabase.CopyAsset(AssetDatabase.GetAssetPath(tile),ResourceLocation+$"/{inputTiles[i]}.asset");
+                                }
+                                else
+                                {
+                                    AssetDatabase.MoveAsset(AssetDatabase.GetAssetPath(tile),ResourceLocation+$"/{inputTiles[i]}.asset");
+                                }
+                            }
                         }
+                        AssetDatabase.Refresh();
                     }
 #endif
 
@@ -259,7 +271,7 @@ namespace AutoWfc
 
         public void CreateWfcFromTileSet()
         {
-            bool saveToFolder = !string.IsNullOrEmpty(ResourceLocation);
+            bool saveToFolder = !string.IsNullOrEmpty(RawResourceLocation);
             tileSet.filterMode = FilterMode.Point;
             
             var sprites = Resources.LoadAll<Sprite>(tileSet.name);
@@ -286,7 +298,22 @@ namespace AutoWfc
                         {
                             AssetDatabase.CreateFolder(ResourceLocation.Substring(0,ResourceLocation.LastIndexOf('/')), "Resources");
                         }
-                        AssetDatabase.CreateAsset(tile,ResourceLocation+$"/{hashedSpriteInput[i]}.asset");
+                        if (!AssetDatabase.Contains(tile))
+                        {
+                            AssetDatabase.CreateAsset(tile,ResourceLocation+$"/{hashedSpriteInput[i]}.asset");
+                        }
+                        else
+                        {
+                            if (cloneTileIfNotExist)
+                            {
+                                AssetDatabase.CopyAsset(AssetDatabase.GetAssetPath(tile),ResourceLocation+$"/{hashedSpriteInput[i]}.asset");
+                            }
+                            else
+                            {
+                                AssetDatabase.MoveAsset(AssetDatabase.GetAssetPath(tile),ResourceLocation+$"/{hashedSpriteInput[i]}.asset");
+                            }
+                        }
+                        AssetDatabase.Refresh();
                     }
                 }
 #endif
