@@ -3,6 +3,7 @@ using AutoWfc.Extensions;
 using AutoWfc.GenericUtils;
 using JetBrains.Annotations;
 using UnityEditor;
+using UnityEditor.UI;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
@@ -103,7 +104,7 @@ namespace AutoWfc.Editor
                 if (_p1 is not null && _p2 is not null)
                 {
                     // p1 & p2 selected
-                    GridEditorUtility.DrawGridMarquee(_tilemap, _p1.Value.BoundsIntFrom2Points(_p2.Value), Color.cyan);
+                    GridEditorUtility.DrawGridMarquee(_tilemap, _p1.Value.BoundsIntFrom2Points(_p2.Value), _lastGeneratedRegion == null ? Color.magenta : new Color(240/255f,156/255f,38/255f));
                 }
             }
             else if (Event.current.type != EventType.Used)
@@ -186,8 +187,8 @@ namespace AutoWfc.Editor
             {
                 using (new DisposableGUILayout.Horizontal())
                 {
-                    clickedGenerateRegion = GUILayout.Button("Generate Tile from model");
-                    clickSetToEmpty = GUILayout.Button("SetToEmpty");
+                    clickedGenerateRegion = GUILayout.Button("Generate tiles from model");
+                    clickSetToEmpty = GUILayout.Button("Set to empty");
                 }
                 using (new DisposableGUILayout.Horizontal())
                 {
