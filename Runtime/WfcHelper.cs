@@ -70,7 +70,8 @@ namespace AutoWfc
 
         }
 
-        public string[] GenerateWfc(BoundsInt bounds, string[] preset = null)
+
+        public string[] GenerateWfc(BoundsInt bounds, string[] preset = null, int maxRetry = 10)
         {
             var wfc = WfcUtils<string>.BuildFromJson(serializedJson);
             wfc.NextCellEnum = nextCellEnum;
@@ -82,7 +83,7 @@ namespace AutoWfc
             
             var tilemap = GetComponent<Tilemap>();
             preset ??= GetTilesFromTilemap(bounds, tilemap, out var inputVec);
-            var retry = 10;
+            var retry = maxRetry > 0 ? maxRetry : 10;
             while (retry > 0)
             {
                 try

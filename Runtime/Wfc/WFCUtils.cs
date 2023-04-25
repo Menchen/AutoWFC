@@ -39,7 +39,7 @@ namespace AutoWfc.Wfc
         [JsonConverter(typeof(BitArrayConverter))]
         public BitArray MaskUsed; // Default Mask for enabled pattern
 
-        [JsonIgnore] public Random Random;
+        [JsonIgnore] public Random Rng;
 
         [JsonProperty]
         public SelectPattern.SelectPatternEnum SelectPatternEnum
@@ -90,7 +90,7 @@ namespace AutoWfc.Wfc
             var wfcUtils = JsonConvert.DeserializeObject<WfcUtils<T>>(json, new BitArrayConverter());
             // wfcUtils.NextCellFn ??= NextCell.GetNextCellFn(wfcUtils.NextCellEnum);
             // wfcUtils.PatternFn ??= SelectPattern.GetPatternFn(wfcUtils.SelectPatternEnum);
-            wfcUtils.Random = new Random();
+            wfcUtils.Rng = new Random( Guid.NewGuid().GetHashCode());
             wfcUtils.PatternLookUp = wfcUtils.Patterns.ToDictionary(e => e.Value, e => e.Id);
             return wfcUtils;
         }
@@ -106,7 +106,7 @@ namespace AutoWfc.Wfc
         }
 
         public WfcUtils(V sizeInput, T[] input,
-            Random random,
+            Random rng,
             INeibours neighbours, T emptyState, NextCell.NextCellEnum nextCellEnum,
             SelectPattern.SelectPatternEnum selectPatternEnum)
         {
@@ -115,7 +115,7 @@ namespace AutoWfc.Wfc
             NextCellEnum = nextCellEnum;
             SelectPatternEnum = selectPatternEnum;
             // PatternSize = patternSize;
-            Random = random;
+            Rng = rng;
             Neighbours = neighbours;
             EmptyState = emptyState;
 

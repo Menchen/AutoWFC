@@ -1,13 +1,16 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using AutoWfc.Extensions;
 using AutoWfc.GenericUtils;
+using AutoWfc.Wfc;
 using JetBrains.Annotations;
 using UnityEditor;
 using UnityEditor.UI;
 using UnityEngine;
 using UnityEngine.Tilemaps;
+using Debug = UnityEngine.Debug;
 
 namespace AutoWfc.Editor
 {
@@ -53,6 +56,50 @@ namespace AutoWfc.Editor
                 }
             }
             
+        }
+
+        private string _benchmarkText;
+        private void Benchmark(WfcUtils<string>.NextCell.NextCellEnum nextCellEnum, WfcUtils<string>.SelectPattern.SelectPatternEnum selectPatternEnum, int count)
+        {
+            Debug.Log($"Benchmark start for {nextCellEnum} - {selectPatternEnum} at: {DateTime.Now}");
+            _targetWfcHelper.selectPatternEnum = selectPatternEnum;
+            _targetWfcHelper.nextCellEnum = nextCellEnum;
+            var stopWatch = new Stopwatch();
+            var fail = 0;
+            stopWatch.Start();
+            for (int i = 0; i < count; i++)
+            {
+                    var result = _targetWfcHelper.GenerateWfc(_targetWfcHelper.CurrentSelection!.Value,maxRetry:1);
+                    if (result is null)
+                    {
+                        fail++;
+                        
+                    }
+                
+            }
+            stopWatch.Stop();
+            Debug.Log($"Benchmark end for {nextCellEnum} - {selectPatternEnum} with {fail} fails at: {DateTime.Now}, elapsed: {stopWatch.Elapsed}");
+            _benchmarkText+= $"{nextCellEnum} - {selectPatternEnum}, {fail}, {stopWatch.Elapsed}\n";
+        }
+
+        private void BenchmarkAll()
+        {
+            var oldNextCell = _targetWfcHelper.nextCellEnum;
+            var oldPatternFn = _targetWfcHelper.selectPatternEnum;
+            _benchmarkText = "";
+
+            foreach (var nextCellFn in Enum.GetValues(typeof(WfcUtils<string>.NextCell.NextCellEnum)).Cast<WfcUtils<string>.NextCell.NextCellEnum>())
+            {
+            // var nextCellFn = WfcUtils<string>.NextCell.NextCellEnum.MinStateEntropyWeighted;
+                var patternFn = WfcUtils<string>.SelectPattern.SelectPatternEnum.PatternUniform;
+                // foreach (var patternFn in Enum.GetValues(typeof(WfcUtils<string>.SelectPattern.SelectPatternEnum)).Cast<WfcUtils<string>.SelectPattern.SelectPatternEnum>())
+                // {
+                    Benchmark(nextCellFn,patternFn,400);
+                // }
+            }
+
+            _targetWfcHelper.nextCellEnum = oldNextCell;
+            _targetWfcHelper.selectPatternEnum = oldPatternFn;
         }
 
         private void HandleSelection()
@@ -217,6 +264,10 @@ namespace AutoWfc.Editor
                 using (new DisposableGUILayout.Horizontal())
                 {
                     clickTrainFromSelection = GUILayout.Button("Train from selected region");
+                    if (GUILayout.Button("Benchmark All"))
+                    {
+                        BenchmarkAll();
+                    }
                     using (new EditorGUI.DisabledScope(!GUI.enabled || slicer.CurrentSelection?.size.sqrMagnitude != 6))
                     {
                         clickUnlearnFromSelection = GUILayout.Button("Unlearn from selected region");
@@ -299,7 +350,7 @@ namespace AutoWfc.Editor
             
             EditorGUILayout.BeginHorizontal("Toolbar", GUILayout.ExpandWidth(true));
             // GUILayout.FlexibleSpace();
-            _selectActive = GUILayout.Toggle(_selectActive, "Click Here to toggle grid selection","ToolbarButton",GUILayout.ExpandWidth(true));
+            _selectActive = GUILayout.Toggle(_selectActive, "Click Here to toggle grid selection",GUI.skin.button,GUILayout.ExpandWidth(true));
             // GUILayout.FlexibleSpace();
             EditorGUILayout.EndHorizontal();
             
@@ -329,6 +380,8 @@ namespace AutoWfc.Editor
                     PatternExplorerEditorToolKit.Init();
                 }
             }
+
+            EditorGUILayout.TextArea(_benchmarkText);
         }
 
     }

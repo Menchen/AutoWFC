@@ -46,7 +46,7 @@ namespace AutoWfc.Wfc
                 }
                 n ??= e.Popcnt <= 1
                     ? e.Coefficient.FindFirstIndex()
-                    : e.Coefficient.FindRandomIndex(e.Popcnt, Wfc.Random);
+                    : e.Coefficient.FindRandomIndex(e.Popcnt, Wfc.Rng);
 
                 var p = Wfc.Patterns[n.Value];
                 if (!e.Collapse(n.Value, p.Value))
@@ -192,7 +192,7 @@ namespace AutoWfc.Wfc
                 {
                     // Use shuffled index to introduce randomness
                     var shuffledIndex = Enumerable.Range(0, Preset.Length).ToList();
-                    shuffledIndex.ShuffleInPlace(Wfc.Random);
+                    shuffledIndex.ShuffleInPlace(Wfc.Rng);
 
                     foreach (var i in shuffledIndex)
                     {

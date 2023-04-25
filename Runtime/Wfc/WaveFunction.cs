@@ -70,7 +70,7 @@ namespace AutoWfc.Wfc
                     }
 
                     var mutatedStateEntropyWeighted = element.Popcnt * element.Entropy *
-                                                      (w.Wfc.Random.NextDouble() * multiplierRange + multiplierStart);
+                                                      (w.Wfc.Rng.NextDouble() * multiplierRange + multiplierStart);
                     if (mutatedStateEntropyWeighted < localMinValue)
                     {
                         minElement = element;
@@ -101,7 +101,7 @@ namespace AutoWfc.Wfc
                     }
 
                     var mutatedEntropy =
-                        element.Entropy * (w.Wfc.Random.NextDouble() * multiplierRange + multiplierStart);
+                        element.Entropy * (w.Wfc.Rng.NextDouble() * multiplierRange + multiplierStart);
                     if (mutatedEntropy < localMinValue)
                     {
                         minElement = element;
@@ -132,7 +132,7 @@ namespace AutoWfc.Wfc
                     }
 
                     var mutatedEntropy =
-                        element.Entropy * (w.Wfc.Random.NextDouble() * multiplierRange + multiplierStart);
+                        element.Entropy * (w.Wfc.Rng.NextDouble() * multiplierRange + multiplierStart);
                     if (mutatedEntropy > maxValue)
                     {
                         maxElement = element;
@@ -199,14 +199,14 @@ namespace AutoWfc.Wfc
                         continue;
                     }
 
-                    var multiplier = w.Wfc.Random.NextDouble() * multiplierRange + multiplierStart;
+                    var multiplier = w.Wfc.Rng.NextDouble() * multiplierRange + multiplierStart;
                     var frequency = w.Wfc.Patterns[i].NormalizedFrequency * multiplier;
                     distributionList[i] = frequency;
                     sum += frequency;
                 }
 
                 // Random Double in range (0,sum)
-                var r = w.Wfc.Random.NextDouble() * sum;
+                var r = w.Wfc.Rng.NextDouble() * sum;
                 var accumulator = 0d;
                 for (int i = 0; i < distributionList.Length; i++)
                 {
@@ -232,7 +232,7 @@ namespace AutoWfc.Wfc
                         (validState.Item2,
                             validState.Item1
                                 ? w.Wfc.Patterns[validState.Item2].Entropy *
-                                  (w.Wfc.Random.NextDouble() * multiplierRange + multiplierStart) // Mutation multiplier
+                                  (w.Wfc.Rng.NextDouble() * multiplierRange + multiplierStart) // Mutation multiplier
                                 : double.MaxValue))
                     .Aggregate((x, acc) => x.Item2 < acc.Item2 ? x : acc);
 
@@ -254,7 +254,7 @@ namespace AutoWfc.Wfc
                         (validState.Item2,
                             validState.Item1
                                 ? w.Wfc.Patterns[validState.Item2].RemainingEntropy *
-                                  (w.Wfc.Random.NextDouble() * multiplierRange + multiplierStart) // Mutation multiplier
+                                  (w.Wfc.Rng.NextDouble() * multiplierRange + multiplierStart) // Mutation multiplier
                                 : double.MinValue))
                     .Aggregate((x, acc) => x.Item2 > acc.Item2 ? x : acc);
 
@@ -281,14 +281,14 @@ namespace AutoWfc.Wfc
                         continue;
                     }
 
-                    var multiplier = w.Wfc.Random.NextDouble() * multiplierRange + multiplierStart;
+                    var multiplier = w.Wfc.Rng.NextDouble() * multiplierRange + multiplierStart;
                     var entropy = w.Wfc.Patterns[i].Entropy * multiplier;
                     distributionList[i] = entropy;
                     sum += entropy;
                 }
 
                 // Random Double in range (0,sum)
-                var r = w.Wfc.Random.NextDouble() * sum;
+                var r = w.Wfc.Rng.NextDouble() * sum;
                 var accumulator = 0d;
                 for (int i = 0; i < distributionList.Length; i++)
                 {
@@ -319,14 +319,14 @@ namespace AutoWfc.Wfc
                         continue;
                     }
 
-                    var multiplier = w.Wfc.Random.NextDouble() * multiplierRange + multiplierStart;
+                    var multiplier = w.Wfc.Rng.NextDouble() * multiplierRange + multiplierStart;
                     var entropy = w.Wfc.Patterns[i].InverseEntropy * multiplier;
                     distributionList[i] = entropy;
                     sum += entropy;
                 }
 
                 // Random Double in range (0,sum)
-                var r = w.Wfc.Random.NextDouble() * sum;
+                var r = w.Wfc.Rng.NextDouble() * sum;
                 var accumulator = 0d;
                 for (int i = 0; i < distributionList.Length; i++)
                 {
@@ -352,7 +352,7 @@ namespace AutoWfc.Wfc
 
             public static int PatternUniform(Wave w, Element e)
             {
-                var random = w.Wfc.Random;
+                var random = w.Wfc.Rng;
                 var avaliable = e.Coefficient.GetCardinality();
                 var r = random.Next(0, avaliable);
 
