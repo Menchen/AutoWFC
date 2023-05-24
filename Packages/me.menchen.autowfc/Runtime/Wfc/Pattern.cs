@@ -21,10 +21,10 @@ namespace AutoWfc.Wfc
 
             [JsonIgnore] public double InverseEntropy => _cachedInverseEntropy ??= 1d / Entropy;
 
+            // Sum of all entropy except current pattern
             public double RemainingEntropy;
 
             public T Value { get; set; }
-            // public T[] Data { get; set; }
 
             [JsonProperty(ItemConverterType = typeof(BitArrayConverter))]
             public BitArray[] Valid { get; set; }

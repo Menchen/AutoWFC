@@ -158,6 +158,8 @@ namespace AutoWfc.Wfc
                 PatternFrequencyWeighted,
                 PatternMaxEntropy,
                 PatternMinEntropy,
+                PatternMaxRemainingEntropy,
+                PatternMinRemainingEntropy,
                 PatternEntropyInverseWeighted,
                 PatternEntropyHalfHalfWeighted,
             }
@@ -176,6 +178,10 @@ namespace AutoWfc.Wfc
                         return PatternMaxEntropy;
                     case SelectPatternEnum.PatternMinEntropy:
                         return PatternMinEntropy;
+                    case SelectPatternEnum.PatternMaxRemainingEntropy:
+                        return PatternMaxRemainingEntropy;
+                    case SelectPatternEnum.PatternMinRemainingEntropy:
+                        return PatternMinRemainingEntropy;
                     case SelectPatternEnum.PatternEntropyInverseWeighted:
                         return PatternEntropyInverseWeighted;
                     case SelectPatternEnum.PatternEntropyHalfHalfWeighted:
@@ -253,10 +259,54 @@ namespace AutoWfc.Wfc
                 var max = e.Coefficient.IterateWithIndex().Select(validState =>
                         (validState.Item2,
                             validState.Item1
+                                ? w.Wfc.Patterns[validState.Item2].Entropy *
+                                  (w.Wfc.Rng.NextDouble() * multiplierRange + multiplierStart) // Mutation multiplier
+                                : double.MinValue))
+                    .Aggregate((x, acc) => x.Item2 > acc.Item2 ? x : acc);
+
+                var returnValue = e.Coefficient[max.Item1] ? max.Item1 : -1;
+                if (returnValue < 0)
+                {
+                    w.Wfc.Logger?.Invoke($"Failed to select pattern for {string.Join(",", e.Pos.Value)}");
+                }
+
+                return returnValue;
+            }
+            
+            public static int PatternMaxRemainingEntropy(Wave w, Element e)
+            {
+                var multiplierRange = w.Wfc.MutationMultiplier * 0.25f;
+                var multiplierStart = 1f - multiplierRange;
+                multiplierRange *= 2f;
+                var max = e.Coefficient.IterateWithIndex().Select(validState =>
+                        (validState.Item2,
+                            validState.Item1
                                 ? w.Wfc.Patterns[validState.Item2].RemainingEntropy *
                                   (w.Wfc.Rng.NextDouble() * multiplierRange + multiplierStart) // Mutation multiplier
                                 : double.MinValue))
                     .Aggregate((x, acc) => x.Item2 > acc.Item2 ? x : acc);
+
+                var returnValue = e.Coefficient[max.Item1] ? max.Item1 : -1;
+                if (returnValue < 0)
+                {
+                    w.Wfc.Logger?.Invoke($"Failed to select pattern for {string.Join(",", e.Pos.Value)}");
+                }
+
+                return returnValue;
+            }
+            
+            public static int PatternMinRemainingEntropy(Wave w, Element e)
+            {
+                var multiplierRange = w.Wfc.MutationMultiplier * 0.25f;
+                var multiplierStart = 1f - multiplierRange;
+                multiplierRange *= 2f;
+                var max = e.Coefficient.IterateWithIndex().Select(validState =>
+                        (validState.Item2,
+                            validState.Item1
+                                ? w.Wfc.Patterns[validState.Item2].RemainingEntropy *
+                                  (w.Wfc.Rng.NextDouble() * multiplierRange + multiplierStart) // Mutation multiplier
+                                : double.MaxValue))
+                    .Aggregate((x, acc) => x.Item2 < acc.Item2 ? x : acc);
 
                 var returnValue = e.Coefficient[max.Item1] ? max.Item1 : -1;
                 if (returnValue < 0)
