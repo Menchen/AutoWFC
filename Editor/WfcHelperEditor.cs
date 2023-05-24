@@ -22,11 +22,9 @@ namespace AutoWfc.Editor
         private EditorMode _editorMode;
         private SelectState _selectState;
         private string[] _lastGeneratedRegion;
-        
-        [SerializeField]
-        private List<Vector3Int> _conflictTiles;
-        [SerializeField]
-        private List<Vector3Int> _conflictEdgeTiles;
+
+        [SerializeField] private List<Vector3Int> _conflictTiles;
+        [SerializeField] private List<Vector3Int> _conflictEdgeTiles;
 
         private enum SelectState
         {
@@ -48,18 +46,23 @@ namespace AutoWfc.Editor
             {
                 foreach (var pos in _conflictTiles.Except(_conflictEdgeTiles))
                 {
-                    GridEditorUtility.DrawGridMarquee(_tilemap, new BoundsInt(pos, Vector3Int.one), new Color(1f,0.1f,0.1f,0.9f),localOffset:new Vector3(0,0,2));
+                    GridEditorUtility.DrawGridMarquee(_tilemap, new BoundsInt(pos, Vector3Int.one),
+                        new Color(1f, 0.1f, 0.1f, 0.9f), localOffset: new Vector3(0, 0, 2));
                 }
+
                 foreach (var pos in _conflictEdgeTiles)
                 {
-                    GridEditorUtility.DrawGridMarquee(_tilemap, new BoundsInt(pos, Vector3Int.one), new Color(155/255f,25/255f,170/255f,1),thickness: 2f,localOffset:new Vector3(0,0,3));
+                    GridEditorUtility.DrawGridMarquee(_tilemap, new BoundsInt(pos, Vector3Int.one),
+                        new Color(155 / 255f, 25 / 255f, 170 / 255f, 1), thickness: 2f,
+                        localOffset: new Vector3(0, 0, 3));
                 }
             }
-            
         }
 
         private string _benchmarkText;
-        private void Benchmark(WfcUtils<string>.NextCell.NextCellEnum nextCellEnum, WfcUtils<string>.SelectPattern.SelectPatternEnum selectPatternEnum, int count)
+
+        private void Benchmark(WfcUtils<string>.NextCell.NextCellEnum nextCellEnum,
+            WfcUtils<string>.SelectPattern.SelectPatternEnum selectPatternEnum, int count)
         {
             Debug.Log($"Benchmark start for {nextCellEnum} - {selectPatternEnum} at: {DateTime.Now}");
             _targetWfcHelper.selectPatternEnum = selectPatternEnum;
@@ -69,17 +72,17 @@ namespace AutoWfc.Editor
             stopWatch.Start();
             for (int i = 0; i < count; i++)
             {
-                    var result = _targetWfcHelper.GenerateWfc(_targetWfcHelper.CurrentSelection!.Value,maxRetry:1);
-                    if (result is null)
-                    {
-                        fail++;
-                        
-                    }
-                
+                var result = _targetWfcHelper.GenerateWfc(_targetWfcHelper.CurrentSelection!.Value, maxRetry: 1);
+                if (result is null)
+                {
+                    fail++;
+                }
             }
+
             stopWatch.Stop();
-            Debug.Log($"Benchmark end for {nextCellEnum} - {selectPatternEnum} with {fail} fails at: {DateTime.Now}, elapsed: {stopWatch.Elapsed}");
-            _benchmarkText+= $"{nextCellEnum} - {selectPatternEnum}, {fail}, {stopWatch.Elapsed}\n";
+            Debug.Log(
+                $"Benchmark end for {nextCellEnum} - {selectPatternEnum} with {fail} fails at: {DateTime.Now}, elapsed: {stopWatch.Elapsed}");
+            _benchmarkText += $"{nextCellEnum} - {selectPatternEnum}, {fail}, {stopWatch.Elapsed}\n";
         }
 
         private void BenchmarkAll()
@@ -88,15 +91,16 @@ namespace AutoWfc.Editor
             var oldPatternFn = _targetWfcHelper.selectPatternEnum;
             _benchmarkText = "";
 
-            foreach (var nextCellFn in Enum.GetValues(typeof(WfcUtils<string>.NextCell.NextCellEnum)).Cast<WfcUtils<string>.NextCell.NextCellEnum>())
+            // foreach (var nextCellFn in Enum.GetValues(typeof(WfcUtils<string>.NextCell.NextCellEnum)).Cast<WfcUtils<string>.NextCell.NextCellEnum>())
+            // {
+            var nextCellFn = WfcUtils<string>.NextCell.NextCellEnum.MinStateEntropyWeighted;
+            // var patternFn = WfcUtils<string>.SelectPattern.SelectPatternEnum.PatternUniform;
+            foreach (var patternFn in Enum.GetValues(typeof(WfcUtils<string>.SelectPattern.SelectPatternEnum))
+                         .Cast<WfcUtils<string>.SelectPattern.SelectPatternEnum>())
             {
-            // var nextCellFn = WfcUtils<string>.NextCell.NextCellEnum.MinStateEntropyWeighted;
-                var patternFn = WfcUtils<string>.SelectPattern.SelectPatternEnum.PatternUniform;
-                // foreach (var patternFn in Enum.GetValues(typeof(WfcUtils<string>.SelectPattern.SelectPatternEnum)).Cast<WfcUtils<string>.SelectPattern.SelectPatternEnum>())
-                // {
-                    Benchmark(nextCellFn,patternFn,400);
-                // }
+                Benchmark(nextCellFn, patternFn, 500);
             }
+            // }
 
             _targetWfcHelper.nextCellEnum = oldNextCell;
             _targetWfcHelper.selectPatternEnum = oldPatternFn;
@@ -174,8 +178,10 @@ namespace AutoWfc.Editor
                 if (_p1 is not null && _p2 is not null)
                 {
                     // p1 & p2 selected
-                    GridEditorUtility.DrawGridMarquee(_tilemap, _p1.Value.BoundsIntFrom2Points(_p2.Value), _lastGeneratedRegion == null ? Color.magenta : new Color(240/255f,156/255f,38/255f));
+                    GridEditorUtility.DrawGridMarquee(_tilemap, _p1.Value.BoundsIntFrom2Points(_p2.Value),
+                        _lastGeneratedRegion == null ? Color.magenta : new Color(240 / 255f, 156 / 255f, 38 / 255f));
                 }
+
                 DrawConflictMap();
             }
             else if (Event.current.type != EventType.Used)
@@ -200,12 +206,14 @@ namespace AutoWfc.Editor
             if (PatternExplorerEditorToolKit.Current == _targetWfcHelper)
             {
                 PatternExplorerEditorToolKit.Current = null;
-
             }
         }
 
+        private GUIStyle _textAreaStyle;
+
         private void OnEnable()
         {
+            _textAreaStyle = new GUIStyle(EditorStyles.textArea) { wordWrap = true };
             _targetWfcHelper = (WfcHelper)target;
             _tilemap = _targetWfcHelper.GetComponent<Tilemap>();
             _p1 = _targetWfcHelper.CurrentSelection?.min;
@@ -217,15 +225,23 @@ namespace AutoWfc.Editor
 
         private bool _selectActive;
         private Tool _lastTool = Tool.None;
+        private bool _showJsonTextArea;
 
         public override void OnInspectorGUI()
         {
-            WfcHelper slicer = (WfcHelper)target;
-            if (string.IsNullOrEmpty(slicer.tileOutputFolder?.Path))
+            WfcHelper wfcHelper = (WfcHelper)target;
+            if (string.IsNullOrEmpty(wfcHelper.tileOutputFolder?.Path))
             {
                 GUILayout.Label("Missing Tile output folder, some feature might not work.");
             }
+
             DrawDefaultInspector();
+            _showJsonTextArea = EditorGUILayout.Foldout(_showJsonTextArea, "Show JSON model");
+            if (_showJsonTextArea)
+            {
+                wfcHelper.serializedJson =
+                    EditorGUILayout.TextArea(wfcHelper.serializedJson, _textAreaStyle, GUILayout.Height(300));
+            }
 
             // public static void DrawGridMarquee(GridLayout gridLayout, BoundsInt area, Color color)
 
@@ -233,18 +249,19 @@ namespace AutoWfc.Editor
             // GridEditorUtility.
             if (GUILayout.Button("Create new model from tile set"))
             {
-                Undo.RecordObject(slicer,"Create new model from selection");
-                slicer.CreateWfcFromTileSet();
+                Undo.RecordObject(wfcHelper, "Create new model from selection");
+                wfcHelper.CreateWfcFromTileSet();
             }
 
-            using (new EditorGUI.DisabledScope(slicer.CurrentSelection is null))
+            using (new EditorGUI.DisabledScope(wfcHelper.CurrentSelection is null))
             {
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button("Create new model from selection"))
                 {
-                    Undo.RecordObject(slicer,"Create new model from selection");
-                    slicer.CreateFromSelection(slicer.CurrentSelection!.Value);
+                    Undo.RecordObject(wfcHelper, "Create new model from selection");
+                    wfcHelper.CreateFromSelection(wfcHelper.CurrentSelection!.Value);
                 }
+
                 GUILayout.EndHorizontal();
             }
 
@@ -254,13 +271,15 @@ namespace AutoWfc.Editor
             bool clickSetToEmpty;
             bool clickTrainFromSelection;
             bool clickUnlearnFromSelection;
-            using (new EditorGUI.DisabledScope(string.IsNullOrEmpty(slicer.serializedJson) || slicer.CurrentSelection is null))
+            using (new EditorGUI.DisabledScope(string.IsNullOrEmpty(wfcHelper.serializedJson) ||
+                                               wfcHelper.CurrentSelection is null))
             {
                 using (new DisposableGUILayout.Horizontal())
                 {
                     clickedGenerateRegion = GUILayout.Button("Generate tiles from model");
                     clickSetToEmpty = GUILayout.Button("Set to empty");
                 }
+
                 using (new DisposableGUILayout.Horizontal())
                 {
                     clickTrainFromSelection = GUILayout.Button("Train from selected region");
@@ -268,7 +287,9 @@ namespace AutoWfc.Editor
                     {
                         BenchmarkAll();
                     }
-                    using (new EditorGUI.DisabledScope(!GUI.enabled || slicer.CurrentSelection?.size.sqrMagnitude != 6))
+
+                    using (new EditorGUI.DisabledScope(!GUI.enabled ||
+                                                       wfcHelper.CurrentSelection?.size.sqrMagnitude != 6))
                     {
                         clickUnlearnFromSelection = GUILayout.Button("Unlearn from selected region");
                     }
@@ -279,16 +300,16 @@ namespace AutoWfc.Editor
             {
                 if (clickTrainFromSelection)
                 {
-                    Undo.RecordObject(slicer, "Learn pattern");
-                    slicer.LearnPatternFromRegion(slicer.CurrentSelection!.Value);
-                    EditorUtility.SetDirty(slicer);
+                    Undo.RecordObject(wfcHelper, "Learn pattern");
+                    wfcHelper.LearnPatternFromRegion(wfcHelper.CurrentSelection!.Value);
+                    EditorUtility.SetDirty(wfcHelper);
                 }
 
                 if (clickUnlearnFromSelection)
                 {
-                    Undo.RecordObject(slicer, "Unlearn pattern");
-                    slicer.UnLearnPatternFromRegion(slicer.CurrentSelection!.Value);
-                    EditorUtility.SetDirty(slicer);
+                    Undo.RecordObject(wfcHelper, "Unlearn pattern");
+                    wfcHelper.UnLearnPatternFromRegion(wfcHelper.CurrentSelection!.Value);
+                    EditorUtility.SetDirty(wfcHelper);
                 }
             }
 
@@ -299,24 +320,26 @@ namespace AutoWfc.Editor
                     if (_lastGeneratedRegion is null)
                     {
                         // Cache region before WFC
-                        var beforeWfc = slicer.GetTilesFromTilemap(slicer.CurrentSelection!.Value, _tilemap,out _);
+                        var beforeWfc =
+                            wfcHelper.GetTilesFromTilemap(wfcHelper.CurrentSelection!.Value, _tilemap, out _);
                         _lastGeneratedRegion = beforeWfc;
                     }
-                    var generatedWfc = slicer.GenerateWfc(slicer.CurrentSelection!.Value, _lastGeneratedRegion);
+
+                    var generatedWfc = wfcHelper.GenerateWfc(wfcHelper.CurrentSelection!.Value, _lastGeneratedRegion);
                     if (generatedWfc is not null)
                     {
                         // Use RegisterCompleteObjectUndo instead of RecordObject for tilemap,
                         // because it's faster to replace the object instead of tracking the changes.
                         Undo.SetCurrentGroupName("WFC Tilemap");
                         Undo.RegisterCompleteObjectUndo(_tilemap, "WFC Tilemap");
-                        Undo.RegisterCompleteObjectUndo(this,"Conflict Map");
+                        Undo.RegisterCompleteObjectUndo(this, "Conflict Map");
                         Undo.CollapseUndoOperations(Undo.GetCurrentGroup());
                         HashSet<Vector3Int> edge;
-                        _conflictTiles = slicer.GenerateConflictMap(slicer.CurrentSelection!.Value,
-                            _lastGeneratedRegion, generatedWfc,out edge).ToList();
+                        _conflictTiles = wfcHelper.GenerateConflictMap(wfcHelper.CurrentSelection!.Value,
+                            _lastGeneratedRegion, generatedWfc, out edge).ToList();
                         _conflictEdgeTiles = edge.ToList();
-                        
-                        slicer.ApplyWfc(generatedWfc, slicer.CurrentSelection!.Value);
+
+                        wfcHelper.ApplyWfc(generatedWfc, wfcHelper.CurrentSelection!.Value);
                         EditorUtility.SetDirty(_tilemap);
                     }
                 }
@@ -326,11 +349,11 @@ namespace AutoWfc.Editor
                     Undo.RegisterCompleteObjectUndo(_tilemap, "Set tilemap region to empty");
                     // _tilemap.BoxFill(slicer.CurrentSelection!.Value.position, null, 0, 0,
                     //     slicer.CurrentSelection.Value.size.x, slicer.CurrentSelection.Value.size.y);
-                    for (int x = 0; x < slicer.CurrentSelection!.Value.size.x; x++)
+                    for (int x = 0; x < wfcHelper.CurrentSelection!.Value.size.x; x++)
                     {
-                        for (int y = 0; y < slicer.CurrentSelection.Value.size.y; y++)
+                        for (int y = 0; y < wfcHelper.CurrentSelection.Value.size.y; y++)
                         {
-                            _tilemap.SetTile(slicer.CurrentSelection.Value.position + new Vector3Int(x, y, 0), null);
+                            _tilemap.SetTile(wfcHelper.CurrentSelection.Value.position + new Vector3Int(x, y, 0), null);
                         }
                     }
 
@@ -345,16 +368,16 @@ namespace AutoWfc.Editor
             }
 
             EditorGUILayout.EditorToolbar();
-            
-            
-            
+
+
             EditorGUILayout.BeginHorizontal("Toolbar", GUILayout.ExpandWidth(true));
             // GUILayout.FlexibleSpace();
-            _selectActive = GUILayout.Toggle(_selectActive, "Click Here to toggle grid selection",GUI.skin.button,GUILayout.ExpandWidth(true));
+            _selectActive = GUILayout.Toggle(_selectActive, "Click Here to toggle grid selection", GUI.skin.button,
+                GUILayout.ExpandWidth(true));
             // GUILayout.FlexibleSpace();
             EditorGUILayout.EndHorizontal();
-            
-            
+
+
             _editorMode = _selectActive ? EditorMode.Select : EditorMode.None;
             if (_selectActive)
             {
@@ -376,13 +399,12 @@ namespace AutoWfc.Editor
             {
                 if (GUILayout.Button("Open Pattern Explorer"))
                 {
-                    PatternExplorerEditorToolKit.Current = slicer;
+                    PatternExplorerEditorToolKit.Current = wfcHelper;
                     PatternExplorerEditorToolKit.Init();
                 }
             }
 
             EditorGUILayout.TextArea(_benchmarkText);
         }
-
     }
 }

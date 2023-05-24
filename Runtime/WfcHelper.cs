@@ -34,6 +34,7 @@ namespace AutoWfc
         public WfcUtils<string>.NextCell.NextCellEnum nextCellEnum;
 
         
+        [HideInInspector]
         [TextArea(15,20)]
         public string serializedJson;
 
@@ -299,7 +300,16 @@ namespace AutoWfc
         public void CreateWfcFromTileSet()
         {
             bool saveToFolder = !string.IsNullOrEmpty(RawResourceLocation);
-            tileSet.filterMode = FilterMode.Point;
+#if UNITY_EDITOR
+            if (!saveToFolder)
+            {
+                if (!EditorUtility.DisplayDialog("Missing resource folder to save tile to",
+                        "WFC might fail if no resource folder is set to save new tile", "Continue", "Cancel"))
+                {
+                    return;
+                }
+            }
+#endif
             
             var sprites = Resources.LoadAll<Sprite>(tileSet.name);
             var pixelPerUnit = sprites[0].pixelsPerUnit;
@@ -368,6 +378,26 @@ namespace AutoWfc
 
         public string HashSprite(Sprite value)
         {
+            if (!value.texture.isReadable)
+            {
+#if UNITY_EDITOR
+                if (EditorUtility.DisplayDialog("Failed to read texture", $"Failed to read {value.texture.name}, do you wish to reimport with read?","Reimport","Cancel"))
+                {
+                    TextureImporter ti = (TextureImporter) AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(value.texture));
+                    ti.isReadable = true;
+                    ti.SaveAndReimport();
+                    Debug.LogWarning($"{value.texture.name} was re-imported with write");
+                }
+                else
+                {
+                    Debug.LogWarning($"Cannot read {value.texture.name}");
+                    throw new InvalidOperationException($"Cannot read {value.texture.name}");
+                }
+#else
+                Debug.LogWarning($"Cannot read {value.texture.name}");
+                throw new InvalidOperationException($"Cannot read {value.texture.name}");
+#endif
+            }
             var hash128 = new Hash128();
             var x = Mathf.FloorToInt(value.rect.x);
             var y = Mathf.FloorToInt(value.rect.y);
