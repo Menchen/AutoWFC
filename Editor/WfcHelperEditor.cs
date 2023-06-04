@@ -213,7 +213,7 @@ namespace AutoWfc.Editor
 
         private void OnEnable()
         {
-            _textAreaStyle = new GUIStyle(EditorStyles.textArea) { wordWrap = true };
+            _textAreaStyle = new GUIStyle(EditorStyles.textArea ?? new GUIStyle()) { wordWrap = true };
             _targetWfcHelper = (WfcHelper)target;
             _tilemap = _targetWfcHelper.GetComponent<Tilemap>();
             _p1 = _targetWfcHelper.CurrentSelection?.min;
