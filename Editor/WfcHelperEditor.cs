@@ -283,10 +283,10 @@ namespace AutoWfc.Editor
                 using (new DisposableGUILayout.Horizontal())
                 {
                     clickTrainFromSelection = GUILayout.Button("Train from selected region");
-                    if (GUILayout.Button("Benchmark All"))
-                    {
-                        BenchmarkAll();
-                    }
+                    // if (GUILayout.Button("Benchmark All"))
+                    // {
+                    //     BenchmarkAll();
+                    // }
 
                     using (new EditorGUI.DisabledScope(!GUI.enabled ||
                                                        wfcHelper.CurrentSelection?.size.sqrMagnitude != 6))
@@ -334,9 +334,8 @@ namespace AutoWfc.Editor
                         Undo.RegisterCompleteObjectUndo(_tilemap, "WFC Tilemap");
                         Undo.RegisterCompleteObjectUndo(this, "Conflict Map");
                         Undo.CollapseUndoOperations(Undo.GetCurrentGroup());
-                        HashSet<Vector3Int> edge;
                         _conflictTiles = wfcHelper.GenerateConflictMap(wfcHelper.CurrentSelection!.Value,
-                            _lastGeneratedRegion, generatedWfc, out edge).ToList();
+                            _lastGeneratedRegion, generatedWfc, out var edge).ToList();
                         _conflictEdgeTiles = edge.ToList();
 
                         wfcHelper.ApplyWfc(generatedWfc, wfcHelper.CurrentSelection!.Value);
@@ -349,13 +348,7 @@ namespace AutoWfc.Editor
                     Undo.RegisterCompleteObjectUndo(_tilemap, "Set tilemap region to empty");
                     // _tilemap.BoxFill(slicer.CurrentSelection!.Value.position, null, 0, 0,
                     //     slicer.CurrentSelection.Value.size.x, slicer.CurrentSelection.Value.size.y);
-                    for (int x = 0; x < wfcHelper.CurrentSelection!.Value.size.x; x++)
-                    {
-                        for (int y = 0; y < wfcHelper.CurrentSelection.Value.size.y; y++)
-                        {
-                            _tilemap.SetTile(wfcHelper.CurrentSelection.Value.position + new Vector3Int(x, y, 0), null);
-                        }
-                    }
+                    wfcHelper.SetEmpty(wfcHelper.CurrentSelection!.Value);
 
                     EditorUtility.SetDirty(_tilemap);
                 }
@@ -404,7 +397,7 @@ namespace AutoWfc.Editor
                 }
             }
 
-            EditorGUILayout.TextArea(_benchmarkText);
+            // EditorGUILayout.TextArea(_benchmarkText);
         }
     }
 }
