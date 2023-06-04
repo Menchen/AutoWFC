@@ -1,9 +1,11 @@
 ﻿using System;
 using System.IO;
-using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 // Source : https://forum.unity.com/threads/what-is-a-serializable-asset-type-for-folder.608875/
 namespace AutoWfc
 {
@@ -12,9 +14,12 @@ namespace AutoWfc
     {
         public string GUID;
  
+#if UNITY_EDITOR
         public string Path => AssetDatabase.GUIDToAssetPath(GUID);
+#endif
     }
  
+#if UNITY_EDITOR
     [CustomPropertyDrawer(typeof(FolderReference))]
     public class FolderReferencePropertyDrawer : PropertyDrawer
     {
@@ -87,4 +92,5 @@ namespace AutoWfc
             }
         }
     }
+#endif
 }

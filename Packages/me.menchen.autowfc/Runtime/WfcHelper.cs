@@ -18,16 +18,28 @@ namespace AutoWfc
     public class WfcHelper : MonoBehaviour
     {
 
-        [FormerlySerializedAs("folderReference")] public FolderReference tileOutputFolder;
+#if UNITY_EDITOR
+        [FormerlySerializedAs("folderReference")]
+        [Tooltip("The folder used to save tile for WFC")]
+        public FolderReference tileOutputFolder;
         public BoundsInt? CurrentSelection;
-        public Texture2D tileSet;
-
-        public bool cloneTileIfNotExist = false;
-
         private string ResourceLocation => tileOutputFolder?.Path == null ? null : tileOutputFolder.Path+"/Resources";
         private string RawResourceLocation => tileOutputFolder?.Path;
+#else
+        private string ResourceLocation => null;
+        private string RawResourceLocation => null;
+#endif
+        
+        
+        [Tooltip("Spritesheet used as tilemap for \"Create new model from tile set\"")]
+        public Texture2D tileSet;
+
+        [Tooltip("When creating new WFC Tile, if the same tile is found, move it or clone it?")]
+        public bool cloneTileIfNotExist = false;
+
         
         [Range(0f,1f)]
+        [Tooltip("Control randomness")]
         public float mutation = 1f;
 
         public WfcUtils<string>.SelectPattern.SelectPatternEnum selectPatternEnum;
@@ -110,6 +122,18 @@ namespace AutoWfc
             return null;
         }
 
+        public void SetEmpty(BoundsInt region)
+        {
+            var tilemap = GetComponent<Tilemap>();
+            for (int x = 0; x < region.size.x; x++)
+            {
+                for (int y = 0; y < region.size.y; y++)
+                {
+                    tilemap.SetTile(region.position + new Vector3Int(x, y, 0), null);
+                }
+            }
+        }
+
         public void WfcWithJson(BoundsInt bounds)
         {
             // var sprites = Resources.LoadAll<Sprite>(tileSet.name);
@@ -157,7 +181,7 @@ namespace AutoWfc
             }
 
             // tilemap.ClearAllTiles();
-            tilemap.ClearAllEditorPreviewTiles();
+            // tilemap.ClearAllEditorPreviewTiles();
 
             for (int i = 0; i < output.Length; i++)
             {
